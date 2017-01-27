@@ -68,6 +68,10 @@ public class PSort{
     if(begin == end){
         return -1;
     }
+    int array_size = end - begin - 1;
+    if(array_size <= 4){ // Sort array with insertion sort if size <= 4.
+        iSort(A, begin, end);
+    } 
     int pivot = A[end - 1]; // Pick pivot to be last element of (sub)array.
     int i = begin;
     int j = begin;
@@ -90,5 +94,20 @@ public class PSort{
       int temp = A[first];
       A[first] = A[second];
       A[second] = temp;
+  }
+  
+  // Added insertion sorting for arrays of size 4 and smaller.
+  public static void iSort(int[] A, int begin, int end){
+      for(int i = begin; i < end; i++){
+          int insertion = A[i];
+          int j = i;
+          while((j > begin) && (A[j - 1] > A[j])){
+              int temp = A[j - 1];
+              A[j - 1] = A[j];
+              A[j] = temp;
+              j--;
+          }
+          A[j] = insertion;
+      }
   }
 }
