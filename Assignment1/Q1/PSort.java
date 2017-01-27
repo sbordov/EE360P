@@ -8,7 +8,7 @@ public class PSort{
   private static ExecutorService threadPool;
   private static int[] A;
     
-  private static class sortingThread implements Runnable{
+  private static class sortingThread implements Callable{
         private int begin;
         private int end;
         
@@ -18,34 +18,50 @@ public class PSort{
         }
 
         @Override
-        public void run() {
+        public Boolean call() {
+            Boolean result;
+            Future<Boolean> f = null;
             int pivot = pivotArray(A, begin, end);
+
             if(pivot != -1){
-                parallelSort2(A, begin, pivot);
-                parallelSort2(A, pivot + 1, end);
+                f = parallelSort2(A, begin, pivot);
+                (new sortingThread(pivot + 1, end)).call();
             }
+            if(f != null) {
+                try {
+                    return f.get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+            return true;
         }
+
   }
   
   public static void parallelSort(int[] A, int begin, int end){
     // TODO: Implement your parallel sort function 
     PSort.A = A;
      threadPool = Executors.newFixedThreadPool(10);
-    parallelSort2(A, begin, end);
       try {
-          Thread.sleep(1000);
+          parallelSort2(A, begin, end).get();
       } catch (InterruptedException e) {
           e.printStackTrace();
+      } catch (ExecutionException e) {
+          e.printStackTrace();
       }
-      /*threadPool.shutdown();
+      threadPool.shutdown();
       try {
           threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
       } catch (InterruptedException e) {
-      }*/
+      }
 
   }
-  public static void parallelSort2(int[] A, int begin, int end){
-      threadPool.execute(new sortingThread(begin, end));
+  public static Future<Boolean> parallelSort2(int[] A, int begin, int end){
+      Future<Boolean> f = threadPool.submit(new sortingThread(begin, end));
+      return f;
   }
   
   public synchronized static int pivotArray(int[] A, int begin, int end){
