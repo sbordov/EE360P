@@ -8,7 +8,7 @@ public class PSort{
   private static ExecutorService threadPool;
   private static int[] A;
     
-  private static class sortingThread implements Callable{
+  private static class sortingThread implements Runnable{
         private int begin;
         private int end;
         
@@ -18,25 +18,25 @@ public class PSort{
         }
 
         @Override
-        public Boolean call() {
-            Boolean result;
-            Future<Boolean> f = null;
+        public void run() {
+            Future f = null;
             int pivot = pivotArray(A, begin, end);
 
             if(pivot != -1){
                 f = parallelSort2(A, begin, pivot);
-                (new sortingThread(pivot + 1, end)).call();
+                (new sortingThread(pivot + 1, end)).run();
             }
             if(f != null) {
                 try {
-                    return f.get();
+                    f.get();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
+                return;
             }
-            return true;
+            return;
         }
 
   }
@@ -59,8 +59,8 @@ public class PSort{
       }
 
   }
-  public static Future<Boolean> parallelSort2(int[] A, int begin, int end){
-      Future<Boolean> f = threadPool.submit(new sortingThread(begin, end));
+  public static Future parallelSort2(int[] A, int begin, int end){
+      Future f = threadPool.submit(new sortingThread(begin, end));
       return f;
   }
   
