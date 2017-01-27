@@ -15,25 +15,25 @@ public class PSort{
   }
   
   public static int pivotArray(int[] A, int begin, int end){
-    if(begin == end){
+    if(begin == (end - 1)){
         return -1;
     }
     int pivot = A[end - 1]; // Pick pivot to be last element of (sub)array.
-    int i = 0;
-    int j = 0;
-    while(i < (end - 1)){
-        while((A[i] > pivot)){
+    int i = begin;
+    int j = begin + 1;
+    while(j < (end - 1)){
+        while((i < (end - 1)) && (A[i] <= pivot)){
             i++;
         }
-        while((j < (end - 1)) && (A[j] <= pivot)){
+        j = i + 1;
+        while((j < (end - 1)) && (A[j] >= pivot)){
             j++;
         }
-        swap(A, i, j);
-        if((j == (end - 1)) || (i == (end - 1))){
-            return i; // i should equal the pivot at this point.
+        if(j < end){
+            swap(A, i, j);
         }
     }
-    return -1;
+    return i;
   }
   
   public static void swap(int[] A, int first, int second){
