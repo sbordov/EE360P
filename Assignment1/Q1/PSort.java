@@ -15,7 +15,7 @@ public class PSort{
   }
   
   public static int pivotArray(int[] A, int begin, int end){
-    if(begin == (end - 1)){
+    if(begin == end){
         return -1;
     }
     int pivot = A[end - 1]; // Pick pivot to be last element of (sub)array.
