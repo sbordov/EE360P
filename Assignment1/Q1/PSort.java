@@ -45,20 +45,10 @@ public class PSort{
   public static void parallelSort(int[] A, int begin, int end){
     PSort.A = A;
      threadPool = Executors.newFixedThreadPool(10);
-      try {
-          forkSubArray(A, begin, end).get();
-      } catch (InterruptedException e) {
-          e.printStackTrace();
-      } catch (ExecutionException e) {
-          e.printStackTrace();
-      }
+      (new subArray(begin, end)).quickSort();
       threadPool.shutdown();
-      try {
-          threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-      } catch (InterruptedException e) {
-      }
-
   }
+  
   public static Future forkSubArray(int[] A, int begin, int end){
       Future f = threadPool.submit(new subArray(begin, end));
       return f;
