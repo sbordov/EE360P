@@ -1,31 +1,29 @@
 //UT-EID= sb39782
 
 
-import java.util.*;
 import java.util.concurrent.*;
 
 public class PSort{
   private static ExecutorService threadPool;
   private static int[] A;
     
-  private static class sortingThread implements Runnable{
+  private static class subArray implements Runnable{
         private int begin;
         private int end;
         
-        public sortingThread(int beg_index, int end_index){
+        public subArray(int beg_index, int end_index){
             begin = beg_index;
             end = end_index;
         }
-
-        @Override
-        public void run() {
+        void quickSort(){
             Future f = null;
             int pivot = pivotArray(A, begin, end);
 
             if(pivot != -1){
-                f = parallelSort2(A, begin, pivot);
-                (new sortingThread(pivot + 1, end)).run();
+                f = forkSubArray(A, begin, pivot);
+                (new subArray(pivot + 1, end)).quickSort();
             }
+
             if(f != null) {
                 try {
                     f.get();
@@ -34,19 +32,21 @@ public class PSort{
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
-                return;
             }
             return;
         }
-
+        
+        @Override
+        public void run() {
+            quickSort();
+        }
   }
   
   public static void parallelSort(int[] A, int begin, int end){
-    // TODO: Implement your parallel sort function 
     PSort.A = A;
      threadPool = Executors.newFixedThreadPool(10);
       try {
-          parallelSort2(A, begin, end).get();
+          forkSubArray(A, begin, end).get();
       } catch (InterruptedException e) {
           e.printStackTrace();
       } catch (ExecutionException e) {
@@ -59,8 +59,8 @@ public class PSort{
       }
 
   }
-  public static Future parallelSort2(int[] A, int begin, int end){
-      Future f = threadPool.submit(new sortingThread(begin, end));
+  public static Future forkSubArray(int[] A, int begin, int end){
+      Future f = threadPool.submit(new subArray(begin, end));
       return f;
   }
   
