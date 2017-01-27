@@ -5,16 +5,36 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class PSort{
-  public static void parallelSort(int[] A, int begin, int end){
-    // TODO: Implement your parallel sort function 
-    int pivot = pivotArray(A, begin, end);
-    if(pivot != -1){
-        parallelSort(A, begin, pivot);
-        parallelSort(A, pivot + 1, end);
-    }
+  private static final ExecutorService threadPool = Executors.newFixedThreadPool(10);
+  private static int[] A;
+    
+  private static class sortingThread implements Runnable{
+        private int begin;
+        private int end;
+        
+        public sortingThread(int beg_index, int end_index){
+            begin = beg_index;
+            end = end_index;
+        }
+
+        @Override
+        public void run() {
+            int pivot = pivotArray(A, begin, end);
+            if(pivot != -1){
+                parallelSort(A, begin, pivot);
+                parallelSort(A, pivot + 1, end);
+            }
+        }
   }
   
-  public static int pivotArray(int[] A, int begin, int end){
+  public static void parallelSort(int[] A, int begin, int end){
+    // TODO: Implement your parallel sort function 
+    PSort.A = A;
+    threadPool.execute(new sortingThread(begin, end));
+    
+  }
+  
+  public synchronized static int pivotArray(int[] A, int begin, int end){
     if(begin == end){
         return -1;
     }
