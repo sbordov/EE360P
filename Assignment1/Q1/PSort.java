@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class PSort{
-  private static final ExecutorService threadPool = Executors.newFixedThreadPool(10);
+  private static ExecutorService threadPool;
   private static int[] A;
     
   private static class sortingThread implements Runnable{
@@ -21,8 +21,8 @@ public class PSort{
         public void run() {
             int pivot = pivotArray(A, begin, end);
             if(pivot != -1){
-                parallelSort(A, begin, pivot);
-                parallelSort(A, pivot + 1, end);
+                parallelSort2(A, begin, pivot);
+                parallelSort2(A, pivot + 1, end);
             }
         }
   }
@@ -30,8 +30,22 @@ public class PSort{
   public static void parallelSort(int[] A, int begin, int end){
     // TODO: Implement your parallel sort function 
     PSort.A = A;
-    threadPool.execute(new sortingThread(begin, end));
-    
+     threadPool = Executors.newFixedThreadPool(10);
+    parallelSort2(A, begin, end);
+      try {
+          Thread.sleep(1000);
+      } catch (InterruptedException e) {
+          e.printStackTrace();
+      }
+      /*threadPool.shutdown();
+      try {
+          threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+      } catch (InterruptedException e) {
+      }*/
+
+  }
+  public static void parallelSort2(int[] A, int begin, int end){
+      threadPool.execute(new sortingThread(begin, end));
   }
   
   public synchronized static int pivotArray(int[] A, int begin, int end){
