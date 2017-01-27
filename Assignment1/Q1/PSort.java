@@ -61,9 +61,10 @@ public class PSort{
             return -1;
         }
 
-        int array_size = end - begin - 1;
-
-        if(array_size <= 4){ // Sort array with insertion sort if size <= 4.
+        int array_size = end - begin;
+        if(array_size <= 1){ // Don't need to sort array of size 1 or 0.
+            return -1;
+        } else if(array_size <= 4){ // Sort array with insertion sort if size <= 4.
             iSort(A, begin, end);
             return -1;
         }
