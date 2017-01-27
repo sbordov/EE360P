@@ -20,7 +20,7 @@ public class PSort{
     }
     int pivot = A[end - 1]; // Pick pivot to be last element of (sub)array.
     int i = begin;
-    int j = begin + 1;
+    int j = begin;
     while(j < (end - 1)){
         while((i < (end - 1)) && (A[i] <= pivot)){
             i++;

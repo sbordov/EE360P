@@ -5,6 +5,9 @@ public class SimpleTest {
     int[] A1 = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
     verifyParallelSort(A1);
     
+    int[] A6 = {4, 3, 2, 1};
+    verifyParallelSort(A6);
+    
     int[] A2 = {1, 3, 5, 7, 9};
     verifyParallelSort(A2);
     
