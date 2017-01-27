@@ -71,6 +71,7 @@ public class PSort{
     int array_size = end - begin - 1;
     if(array_size <= 4){ // Sort array with insertion sort if size <= 4.
         iSort(A, begin, end);
+        return -1;
     } 
     int pivot = A[end - 1]; // Pick pivot to be last element of (sub)array.
     int i = begin;
