@@ -17,11 +17,15 @@ public class PSearch{
     */
     
     public static ExecutorService threadPool = Executors.newCachedThreadPool();
+    public static ArrayList<SearchableArrayChunk> chunks;
+    public static ArrayList<Future<Integer>> futures;
+    public static int searchForThisNumber;
     
   public static int parallelSearch(int k, int[] A, int numThreads){
-    // TODO: Implement your parallel search function 
-    ArrayList<SearchableArrayChunk> chunks = SearchableArrayChunk.createSearchChunks(k, A, numThreads);
-    ArrayList<Future<Integer>> futures = new ArrayList<>();
+    // TODO: Implement your parallel search function
+    searchForThisNumber = k;
+    chunks = SearchableArrayChunk.createSearchChunks(A, numThreads);
+    futures = new ArrayList<>();
     for(SearchableArrayChunk chunk : chunks){
         Future<Integer> f = threadPool.submit(chunk);
         futures.add(f);
@@ -102,9 +106,9 @@ public class PSearch{
           return chunks;
       }
       
-      public int sequentialSearch(int k){
+      public int sequentialSearch(){
           for(int i = this.begin_index; i < this.end_index; i++){
-              if(this.array[i] == k){
+              if(this.array[i] == searchForThisNumber){
                   return i;
               }
           }
@@ -118,25 +122,23 @@ public class PSearch{
   */
   private static class SearchableArrayChunk implements Callable<Integer>{
         public ArrayChunk chunk;
-        public int searchForThisNumber;
         
-        public SearchableArrayChunk(ArrayChunk ch, int num){
+        public SearchableArrayChunk(ArrayChunk ch){
             chunk = ch;
-            searchForThisNumber = num;
         }
         
-        public static ArrayList<SearchableArrayChunk> createSearchChunks(int k, int[] A, int numChunks){
+        public static ArrayList<SearchableArrayChunk> createSearchChunks(int[] A, int numChunks){
             ArrayList<ArrayChunk> chunks = ArrayChunk.chunkify(A, numChunks);
             ArrayList<SearchableArrayChunk> searchChunks = new ArrayList<>();
             for(ArrayChunk chunk: chunks){
-                searchChunks.add(new SearchableArrayChunk(chunk, k));
+                searchChunks.add(new SearchableArrayChunk(chunk));
             }
             return searchChunks;
         }
         
         @Override
         public Integer call() throws Exception {
-            return chunk.sequentialSearch(searchForThisNumber);
+            return chunk.sequentialSearch();
         }
     
   }
