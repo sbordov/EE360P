@@ -15,7 +15,7 @@ public class SimpleTest {
     
     int[] A3 = {13, 59, 24, 18, 33, 20, 11, 50, 10999, 97};
     int x3 = 50;
-    int numThread3 = 32;
+    int numThread3 = 4;
     verifyParallelSearch(x3, A3, numThread3);
   }
 

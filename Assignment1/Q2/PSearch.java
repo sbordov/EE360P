@@ -3,6 +3,8 @@
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class PSearch{
@@ -14,21 +16,35 @@ public class PSearch{
         unique.
     */
     
+    public static ExecutorService threadPool = Executors.newCachedThreadPool();
+    
   public static int parallelSearch(int k, int[] A, int numThreads){
     // TODO: Implement your parallel search function 
+    ArrayList<SearchableArrayChunk> chunks = SearchableArrayChunk.createSearchChunks(k, A, numThreads);
+    ArrayList<Future<Integer>> futures = new ArrayList<>();
+    for(SearchableArrayChunk chunk : chunks){
+        Future<Integer> f = threadPool.submit(chunk);
+        futures.add(f);
+    }
+    for(Future<Integer> f : futures){
+        try {
+            if(f.get() != -1){
+                return f.get(); // Return index of array value if found.
+            }
+        } catch (InterruptedException ex) {
+            Logger.getLogger(PSearch.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ExecutionException ex) {
+            Logger.getLogger(PSearch.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     return -1; // if not found
   }
   
-  public static int sequentialSearch(ArrayChunk array, int k){
-      for(int i = begin; i < end; i++){
-          if(A[i] == k){
-              return i;
-          }
-      }
-      return -1;
-  }
-  
-  public class ArrayChunk{
+  /*
+    ArrayChunk is a class which wraps an array and specifies a consecutive chunk of the wrapped array.
+  */
+  private static class ArrayChunk{
       private int[] array;
       private int begin_index; // Begin index is inclusive.
       private int end_index; // End index is exclusive.
@@ -44,27 +60,84 @@ public class PSearch{
           end_index = end;
       }
       
-      public ArrayList<ArrayChunk> chunkify(int[] A, int numChunks){
-          ArrayList<ArrayChunk> chunks = new ArrayList<>();
+      public static ArrayList<ArrayChunk> chunkify(int[] A, int numChunks){
           int length = A.length;
           if((length == 0) || (numChunks == 0)){ // For empty input array or zero chunks
               return null;
           }
           if(numChunks > length){ // If want more chunks than elements in A, split A into as many 1 element pieces as possible.
-              for(int i = 0; i < length; i++){
-                  ArrayChunk chunk = new ArrayChunk(A, i, i + 1);
-                  chunks.add(chunk);
-              }
-          } else{ // TODO: Split array into even chunks.
-              int chunkSize = length / numChunks;
-              int extraElements = length % numChunks;
-              for(int i = 0; i < numChunks; i++){
-                  if(extraElements > 0)
-                      ArrayChunk chunk = new ArrayChunk(A, i, i + chunkSize);
-                      extraElements--;
-                  }
-              }
+              return singleElementChunks(A, numChunks);
+          } else{
+              return multipleElementChunks(A, numChunks);
           }
       }
+      
+      public static ArrayList<ArrayChunk> singleElementChunks(int[] A, int numChunks){
+          ArrayList<ArrayChunk> chunks = new ArrayList<>();
+          for(int i = 0; i < A.length; i++){
+                  ArrayChunk chunk = new ArrayChunk(A, i, i + 1);
+                  chunks.add(chunk);
+          }
+          return chunks;
+      }
+      
+      public static ArrayList<ArrayChunk> multipleElementChunks(int[] A, int numChunks){
+          ArrayList<ArrayChunk> chunks = new ArrayList<>();
+          int length = A.length;
+          int chunkSize = length / numChunks;
+          int extraElements = length % numChunks;
+          ArrayChunk chunk;
+          int j = 0;
+          for(int i = 0; i < numChunks; i++){
+              if(extraElements > 0){ 
+                  chunk = new ArrayChunk(A, j, j + chunkSize + 1);
+                  j += (chunkSize + 1);
+                  extraElements--;
+              } else{
+                  chunk = new ArrayChunk(A, j, j + chunkSize);
+                  j += chunkSize;
+              }
+              chunks.add(chunk);
+          }
+          return chunks;
+      }
+      
+      public int sequentialSearch(int k){
+          for(int i = this.begin_index; i < this.end_index; i++){
+              if(this.array[i] == k){
+                  return i;
+              }
+          }
+          return -1;
+      }
+  }
+  
+  /*
+    SearchableArrayChunk allows for the creation of a thread containing an array chunk
+       and an integer to be searched for.
+  */
+  private static class SearchableArrayChunk implements Callable<Integer>{
+        public ArrayChunk chunk;
+        public int searchForThisNumber;
+        
+        public SearchableArrayChunk(ArrayChunk ch, int num){
+            chunk = ch;
+            searchForThisNumber = num;
+        }
+        
+        public static ArrayList<SearchableArrayChunk> createSearchChunks(int k, int[] A, int numChunks){
+            ArrayList<ArrayChunk> chunks = ArrayChunk.chunkify(A, numChunks);
+            ArrayList<SearchableArrayChunk> searchChunks = new ArrayList<>();
+            for(ArrayChunk chunk: chunks){
+                searchChunks.add(new SearchableArrayChunk(chunk, k));
+            }
+            return searchChunks;
+        }
+        
+        @Override
+        public Integer call() throws Exception {
+            return chunk.sequentialSearch(searchForThisNumber);
+        }
+    
   }
 }
