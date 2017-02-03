@@ -1,5 +1,5 @@
 //UT-EID= sb39782
-
+//        spf363
 
 import java.util.concurrent.*;
 
@@ -7,6 +7,13 @@ public class PSort{
     private static ExecutorService threadPool;
     private static int[] A;
 
+    public static void parallelSort(int[] A, int begin, int end){
+        PSort.A = A;
+        threadPool = Executors.newFixedThreadPool(10);
+        (new subArray(begin, end)).quickSort();
+        threadPool.shutdown();
+    }
+    
     private static class subArray implements Runnable{
         private int begin;
         private int end;
@@ -18,16 +25,16 @@ public class PSort{
 
         void quickSort(){
             Future f = null;
-            int pivot = pivotArray(A, begin, end);
+            int pivot = pivotArray(A, begin, end); // Pivot array A and return the pivot value's index.
 
-            if(pivot != -1){
-                f = forkSubArray(A, begin, pivot);
-                (new subArray(pivot + 1, end)).quickSort();
+            if(pivot != -1){ // Break array into two parts around pivot value.
+                f = forkSubArray(A, begin, pivot); // Recursively sort values left of pivot.
+                (new subArray(pivot + 1, end)).quickSort(); // Recursively sort values right of pivot.
             }
 
             if(f != null) {
                 try {
-                    f.get();
+                    f.get(); // Wait for completion of forked sorting.
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -43,13 +50,7 @@ public class PSort{
         }
     }
 
-    public static void parallelSort(int[] A, int begin, int end){
-        PSort.A = A;
-        threadPool = Executors.newFixedThreadPool(10);
-        (new subArray(begin, end)).quickSort();
-        threadPool.shutdown();
-    }
-
+    // Submit subArrays to run QuickSort on pieces of array A.
     public static Future forkSubArray(int[] A, int begin, int end){
         Future f = threadPool.submit(new subArray(begin, end));
         return f;
@@ -89,6 +90,7 @@ public class PSort{
         return i;
     }
 
+    // Given two indices into array A, swap the elements at those indices.
     public static void swap(int[] A, int first, int second){
         int temp = A[first];
         A[first] = A[second];
