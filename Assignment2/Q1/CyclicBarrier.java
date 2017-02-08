@@ -8,12 +8,13 @@ public class CyclicBarrier {
 	Semaphore sema;
 	Semaphore lock1 = new Semaphore(1, true);
 	Semaphore lock2 = new Semaphore(1, true);
+	Semaphore sema2;
 	int parties;
 	Integer index;
 	
 	public CyclicBarrier(int parties) {
 		this.sema = new Semaphore(0, true);
-
+		this.sema2 = new Semaphore(parties, true);
 		this.parties = parties;
 		this.index = parties;
 
@@ -33,13 +34,15 @@ public class CyclicBarrier {
 				lock1.release();
 				sema.release(parties - 1);
 				lock2.release();
+				sema2.acquire(parties - 1);
+				sema2.release(parties - 1);
 			}
 			else{
 				lock2.release();
+				sema2.acquire();
 				sema.acquire();
+				sema2.release();
 			}
-
-          // you need to write this cod
 		return i;
 	}
 	public int getIndex(){
