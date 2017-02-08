@@ -1,5 +1,5 @@
 public class testBarrier implements Runnable {
-	final static int SIZE = 5;
+	final static int SIZE = 20;
 	final static int ROUND = 5;
 	
 	final CyclicBarrier barrier;
@@ -18,7 +18,7 @@ public class testBarrier implements Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			System.out.println("Thread " + Thread.currentThread().getId() + " is leaving round:" + round);
+			System.out.println("Thread " + Thread.currentThread().getId() + " is leaving round:" + round + " Index:" + index);
 		}
 	}
 	
