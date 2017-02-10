@@ -21,20 +21,17 @@ public class Garden {
   private boolean currentlyDigging = false;
   
   
-  final Lock diggingLock = new ReentrantLock(); // for Newton
-  final Condition notFilling = diggingLock.newCondition();
-  final Condition fewerUnfilledHoles = diggingLock.newCondition();
-  
-  final Lock fillingLock = new ReentrantLock(); // for Mary
-  final Condition notDigging = fillingLock.newCondition();
-  final Condition seededHole = fillingLock.newCondition();
+  final Lock shovelLock = new ReentrantLock(); // for Newton
+  final Condition notFilling = shovelLock.newCondition();
+  final Condition fewerUnfilledHoles = shovelLock.newCondition();
+  final Condition notDigging = shovelLock.newCondition();
+  final Condition seededHole = shovelLock.newCondition();
   
   final Lock plantingLock = new ReentrantLock(); // for Benjamin
   final Condition emptyHole = plantingLock.newCondition();
   
   public void startDigging() throws InterruptedException {  
-      fillingLock.lock();
-      diggingLock.lock();
+      shovelLock.lock();
       try{
           while(numDugHoles.get() >= 4){
               seededHole.await();
@@ -55,8 +52,7 @@ public class Garden {
       numUnfilledHoles.getAndIncrement();
       holesNewtonDug.getAndIncrement();
       currentlyDigging = false;
-      fillingLock.unlock();
-      diggingLock.unlock();
+      shovelLock.unlock();
       notDigging.signal();
       emptyHole.signal();
   }; 
@@ -79,8 +75,7 @@ public class Garden {
   }; 
   
   public void startFilling() throws InterruptedException {  
-      fillingLock.lock();
-      diggingLock.lock();
+      shovelLock.lock();
       try{
           while(numSeededHoles.get() == 0){
               seededHole.await();
@@ -98,8 +93,7 @@ public class Garden {
       holesMaryFilled.getAndIncrement();
       numUnfilledHoles.getAndDecrement();
       currentlyFilling = false;
-      fillingLock.unlock();
-      diggingLock.unlock();
+      shovelLock.unlock();
       fewerUnfilledHoles.signal();
       notFilling.signal();
   }; 
