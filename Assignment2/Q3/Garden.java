@@ -8,7 +8,7 @@ public class Garden {
     
   public Garden() {   }; 
   
-  private AtomicInteger numDugHoles = new AtomicInteger(0);
+  private AtomicInteger numEmptyHoles = new AtomicInteger(0);
   private AtomicInteger numSeededHoles = new AtomicInteger(0);
   private AtomicInteger numFilledHoles = new AtomicInteger(0);
   private AtomicInteger numUnfilledHoles = new AtomicInteger(0);
@@ -33,7 +33,7 @@ public class Garden {
   public void startDigging() throws InterruptedException {  
       shovelLock.lock();
       try{
-          while(numDugHoles.get() >= 4){
+          while(numEmptyHoles.get() >= 4){
               seededHole.await();
           }
           while(numUnfilledHoles.get() >= 8){
@@ -48,7 +48,7 @@ public class Garden {
   }; 
   
   public void doneDigging() {  
-      numDugHoles.getAndIncrement();
+      numEmptyHoles.getAndIncrement();
       numUnfilledHoles.getAndIncrement();
       holesNewtonDug.getAndIncrement();
       currentlyDigging = false;
@@ -60,14 +60,15 @@ public class Garden {
   public void startSeeding() throws InterruptedException { 
       plantingLock.lock();
       try{
-          while(numDugHoles.get() == 0){
+          while(numEmptyHoles.get() == 0){
               emptyHole.await();
           }
       } finally{
       }
   };
   
-  public void doneSeeding() { 
+  public void doneSeeding() {
+      numEmptyHoles.getAndDecrement();
       numSeededHoles.getAndIncrement();
       holesBenjaminSeeded.getAndIncrement();
       plantingLock.unlock();
