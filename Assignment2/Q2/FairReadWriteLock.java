@@ -10,37 +10,37 @@ public class FairReadWriteLock {
         private ThreadLocal<Long> timeStamp;
 
         public FairReadWriteLock() {
-            this.readQueue = new PriorityBlockingQueue<>();
-            this.writeQueue = new PriorityBlockingQueue<>();
-            this.timeStamp = new ThreadLocal<Long>();
+            this.readQueue = new PriorityBlockingQueue<>(); // A queue of timestamps used to determine thread priority.
+            this.writeQueue = new PriorityBlockingQueue<>(); // A queue of timestamps used to determine thread priority.
+            this.timeStamp = new ThreadLocal<Long>(); // Timestamp local to each thread.
         }
         
     
 	public synchronized void beginRead() throws InterruptedException {
-            Timestamp ts = new Timestamp(System.currentTimeMillis());
-            timeStamp.set(ts.getTime());
-            readQueue.add(timeStamp.get());
+            Timestamp ts = new Timestamp(System.currentTimeMillis()); // Get timestamp for current thread.
+            timeStamp.set(ts.getTime()); // Set ThreadLocal.
+            readQueue.add(timeStamp.get()); // Queue up this thread.
             while(!writeQueue.isEmpty() && (this.timeStamp.get() > writeQueue.peek())){
-                this.wait();
+                this.wait(); // Wait if there are writers queued before this reader.
             }
 	}
 	
 	public synchronized void endRead() {
-             readQueue.remove(timeStamp.get());
+             readQueue.remove(timeStamp.get()); // Remove reader from queue.
              this.notifyAll();
 	}
 	
 	public synchronized void beginWrite() throws InterruptedException {
-            Timestamp ts = new Timestamp(System.currentTimeMillis());
+            Timestamp ts = new Timestamp(System.currentTimeMillis()); // Get writer timestamp.
             timeStamp.set(ts.getTime());
-            writeQueue.add(timeStamp.get());
+            writeQueue.add(timeStamp.get()); // Queue up writer.
             while((!writeQueue.isEmpty() && (this.timeStamp.get() > writeQueue.peek())) || 
                     (!readQueue.isEmpty() && (this.timeStamp.get() > readQueue.peek()))){
-                this.wait();
+                this.wait(); // Wait if there is a writer or reader ahead of current writer in queue.
             }
 	}
 	public synchronized void endWrite() {
-            writeQueue.remove(timeStamp.get());
+            writeQueue.remove(timeStamp.get()); // Remove current writer from queue.
             this.notifyAll();
 	}
 }
