@@ -20,6 +20,9 @@ public class Garden {
   private boolean currentlyFilling = false;
   private boolean currentlyDigging = false;
   
+  private boolean mustWakeNewton;
+  private boolean mustWakeMary;
+  
   
   final Lock shovelLock = new ReentrantLock(); // for Newton
   final Condition notFilling = shovelLock.newCondition();
@@ -30,19 +33,24 @@ public class Garden {
   final Lock plantingLock = new ReentrantLock(); // for Benjamin
   final Condition emptyHole = plantingLock.newCondition();
   
-  public void startDigging() throws InterruptedException {  
+  public void startDigging(){  
       shovelLock.lock();
       try{
           while(numEmptyHoles.get() >= 4){
+              mustWakeNewton = true;
               seededHole.await();
           }
           while(numUnfilledHoles.get() >= 8){
+              mustWakeNewton = true;
               fewerUnfilledHoles.await();
           }
           while(currentlyFilling){
-            notFilling.await();
+              mustWakeNewton = true;
+              notFilling.await();
           }
+      } catch(InterruptedException e){
       } finally{
+          mustWakeNewton = false;
           currentlyDigging = true;
       }
   }; 
@@ -52,17 +60,26 @@ public class Garden {
       numUnfilledHoles.getAndIncrement();
       holesNewtonDug.getAndIncrement();
       currentlyDigging = false;
-      shovelLock.unlock();
-      notDigging.signal();
-      emptyHole.signal();
+      try{
+        notDigging.signalAll();
+      } finally{
+          shovelLock.unlock();
+      }
+      plantingLock.lock();
+      try{
+        emptyHole.signal();
+      } finally{
+          plantingLock.unlock();
+      }
   }; 
   
-  public void startSeeding() throws InterruptedException { 
+  public void startSeeding(){ 
       plantingLock.lock();
       try{
           while(numEmptyHoles.get() == 0){
               emptyHole.await();
           }
+      } catch(InterruptedException e){
       } finally{
       }
   };
@@ -72,19 +89,30 @@ public class Garden {
       numSeededHoles.getAndIncrement();
       holesBenjaminSeeded.getAndIncrement();
       plantingLock.unlock();
-      seededHole.signal();
+      if(mustWakeMary || mustWakeNewton){
+          shovelLock.lock();
+          try{
+              seededHole.signal();
+          } finally{
+              shovelLock.unlock();
+          }
+      }
   }; 
   
-  public void startFilling() throws InterruptedException {  
+  public void startFilling(){  
       shovelLock.lock();
       try{
           while(numSeededHoles.get() == 0){
+              mustWakeMary = true;
               seededHole.await();
           }
           while(currentlyDigging){
-            notDigging.await();
+              mustWakeMary = true;
+              notDigging.await();
           }
-      } finally{
+      } catch(InterruptedException e){
+      }finally{
+          mustWakeMary = false;
           currentlyFilling = true;
       }
   }; 
@@ -93,10 +121,18 @@ public class Garden {
       numFilledHoles.getAndIncrement();
       holesMaryFilled.getAndIncrement();
       numUnfilledHoles.getAndDecrement();
+      numSeededHoles.getAndDecrement();
       currentlyFilling = false;
-      shovelLock.unlock();
-      fewerUnfilledHoles.signal();
-      notFilling.signal();
+      try{
+          fewerUnfilledHoles.signal();
+      } catch(Exception e){ // Catch DispatchUncaughtException
+          
+      }
+      try{
+          notFilling.signal();
+      } finally{
+          shovelLock.unlock();
+      }
   }; 
  
     /*
