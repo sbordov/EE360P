@@ -13,11 +13,11 @@ public class testBarrier implements Runnable {
 	final static int ROUND = 10;
         final static int NUM_THREADS = 10;
 	
-	final CyclicBarrier barrier;
+	final MonitorCyclicBarrier barrier;
         
         protected ThreadLocal<String> local_output = new ThreadLocal<String>();
 	
-	public testBarrier(CyclicBarrier barrier) {
+	public testBarrier(MonitorCyclicBarrier barrier) {
 		this.barrier = barrier;
 	}
 	
@@ -43,7 +43,7 @@ public class testBarrier implements Runnable {
         }
 	
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-            CyclicBarrier barrier = new CyclicBarrier(SIZE);
+            MonitorCyclicBarrier barrier = new MonitorCyclicBarrier(SIZE);
             Thread[] t = new Thread[NUM_THREADS];
             
             PrintStream stdout = System.out;

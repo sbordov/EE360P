@@ -31,13 +31,7 @@ public class MonitorCyclicBarrier {
            }
        }
        resetIndex();
-       // Threads begin entering. getIndex();
-       // Threads hit wait until barrier_index = 0.
-       // thread[parties - 1] notifies parties - 1 threads to proceed.
-       // After all threads are gone, start letting num_parties other threads wait at barrier.
-       
-      // you need to write this code
-        return index;
+       return index;
     }
     
     public synchronized int getIndex(){
@@ -54,7 +48,7 @@ public class MonitorCyclicBarrier {
     
     public synchronized void resetIndex(){
         barrier_index++;
-        if(barrier_index == num_parties - 1){
+        if(barrier_index == num_parties - 1){ // After all threads have exited, begin filling barrier again.
             notifyAll();
         }
     }
