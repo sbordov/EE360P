@@ -1,5 +1,3 @@
-package lockTest;
-
 import edu.umd.cs.mtc.MultithreadedTestCase;
 
 public class TestReadRead extends MultithreadedTestCase {

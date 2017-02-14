@@ -1,5 +1,3 @@
-package lockTest;
-
 import edu.umd.cs.mtc.TestFramework;
 
 public class Run {
