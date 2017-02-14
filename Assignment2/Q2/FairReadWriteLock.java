@@ -19,8 +19,8 @@ public class FairReadWriteLock {
 	public synchronized void beginRead() throws InterruptedException {
             Timestamp ts = new Timestamp(System.currentTimeMillis());
             timeStamp.set(ts.getTime());
-            readQueue.add(Thread.currentThread().getId());
-            while(this.timeStamp.get() >= writeQueue.peek()){
+            readQueue.add(timeStamp.get());
+            while(!writeQueue.isEmpty() && (this.timeStamp.get() > writeQueue.peek())){
                 this.wait();
             }
 	}
@@ -33,9 +33,9 @@ public class FairReadWriteLock {
 	public synchronized void beginWrite() throws InterruptedException {
             Timestamp ts = new Timestamp(System.currentTimeMillis());
             timeStamp.set(ts.getTime());
-            writeQueue.add(Thread.currentThread().getId());
-            while((this.timeStamp.get() >= writeQueue.peek()) || 
-                    (this.timeStamp.get() >= readQueue.peek())){
+            writeQueue.add(timeStamp.get());
+            while((!writeQueue.isEmpty() && (this.timeStamp.get() > writeQueue.peek())) || 
+                    (!readQueue.isEmpty() && (this.timeStamp.get() > readQueue.peek()))){
                 this.wait();
             }
 	}
