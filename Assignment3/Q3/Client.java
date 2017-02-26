@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-public class Client {
+public class Client { // Looks like I can edit.
   public static void main (String[] args) {
     String hostAddress;
     int tcpPort;
