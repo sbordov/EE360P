@@ -21,8 +21,8 @@ public class NameServer {
 			ServerSocket listener = new ServerSocket(Symbols.ServerPort);
 			Socket s;
 			while ( (s = listener.accept()) != null) {
-				Thread t = new ServerThread(ns.table, s);
-				t.start();
+				//Thread t = new ServerThread(ns.table, s);
+				//t.start();
 			}
 		} catch (IOException e) {
 			System.err.println("Server aborted:" + e);
