@@ -75,7 +75,7 @@ public class Inventory {
     }
     
     public synchronized String processCancel(String[] tokens){
-        if(tokens.length != 1){
+        if(tokens.length != 2){
             return "Invalid input for cancel.";
         }
         int order_id = Integer.parseInt(tokens[1]);
