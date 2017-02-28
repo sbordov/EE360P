@@ -127,7 +127,7 @@ public class Client {
             DatagramSocket datasocket = new DatagramSocket();
             byte[] buffer = new byte[command.length()];
             buffer = command.getBytes();
-            sPacket = new DatagramPacket(buffer, len, ia, port);
+            sPacket = new DatagramPacket(buffer, buffer.length, ia, port);
             datasocket.send(sPacket);            	
             rPacket = new DatagramPacket(rbuffer, rbuffer.length);
             datasocket.receive(rPacket);
