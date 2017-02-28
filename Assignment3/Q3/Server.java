@@ -47,13 +47,72 @@ public class Server {
 
 
         // TODO: handle request from clients
-        //takeTCPRequests(tcpPort, inventory);
-        takeUDPRequests(udpPort, inventory);
+        Thread tcpListener = new TCPRequestListener(tcpPort, inventory);
+        Thread udpListener = new UDPRequestListener(udpPort, inventory);
+        tcpListener.start();
+        udpListener.start();
 
     }
+    
+    public static class TCPRequestListener extends Thread{
+        private int port;
+        private Inventory inventory;
+        
+        public TCPRequestListener(int portNum, Inventory inv){
+            port = portNum;
+            inventory = inv;
+        }
+        
+        @Override
+        public void run() {
+            System.out.println("TCP Server started:");
+            Server ns = new Server();
+            try {
+                ServerSocket listener = new ServerSocket(port);
+                Socket s;
+                while ( (s = listener.accept()) != null) {
+                    Thread t = new TCPServerThread(ns.table, s, inventory);
+                    t.start();
+                }
+            } catch (IOException e) {
+                System.err.println("Server aborted:" + e);
+            }
+        }
+    }
+    
+    public static class UDPRequestListener extends Thread{
+        private int port;
+        private Inventory inventory;
+        
+        public UDPRequestListener(int portNum, Inventory inv){
+            port = portNum;
+            inventory = inv;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                System.out.println("UDP Server started:");
+                DatagramPacket datapacket;
+                DatagramSocket datasocket = new DatagramSocket(port);
+                byte[] buf = new byte[Symbols.packetSize];
+                while (true) {
+                    datapacket = new DatagramPacket(buf, buf.length);
+                    datasocket.receive(datapacket);
+                    Thread t = new UDPServerThread(datapacket, datasocket, inventory);
+                    t.start();
+                }
+            } catch (SocketException e) {
+                System.err.println(e);
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+        }
+    }
   
+    /*
     public static void takeTCPRequests(int tcpPort, Inventory inventory){
-        System.out.println("Server started:");
+        System.out.println("TCP Server started:");
         Server ns = new Server();
         try {
             ServerSocket listener = new ServerSocket(tcpPort);
@@ -66,10 +125,13 @@ public class Server {
             System.err.println("Server aborted:" + e);
         }
     }
+    */
   
+    /*
     public static void takeUDPRequests(int udpPort, Inventory inventory){
         try {
-            DatagramPacket datapacket, returnpacket;
+            System.out.println("UDP Server started:");
+            DatagramPacket datapacket;
             DatagramSocket datasocket = new DatagramSocket(udpPort);
             byte[] buf = new byte[Symbols.packetSize];
             while (true) {
@@ -84,5 +146,6 @@ public class Server {
             System.err.println(e);
         }
     }
+    */
     
 }

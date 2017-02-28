@@ -44,7 +44,7 @@ public class Client {
         udpPort = Integer.parseInt(args[2]);
         */
         tcpPort = Symbols.ServerPort;
-        udpPort = tcpPort;
+        udpPort = Symbols.UDPPort;
         hostAddress = Symbols.nameServer;
 
         Scanner sc = new Scanner(System.in);
