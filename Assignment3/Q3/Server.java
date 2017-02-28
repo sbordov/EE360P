@@ -3,8 +3,11 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +37,7 @@ public class Server {
         String fileName = args[2];
         */
         tcpPort = Symbols.ServerPort;
-        udpPort = tcpPort;
+        udpPort = Symbols.UDPPort;
         String fileName = "C:\\Users\\Stefan\\Documents\\NetBeansProjects\\EE360P\\Assignment3\\Q3\\input\\inventory.txt";
         
 
@@ -44,7 +47,7 @@ public class Server {
 
 
         // TODO: handle request from clients
-        takeTCPRequests(tcpPort, inventory);
+        //takeTCPRequests(tcpPort, inventory);
         takeUDPRequests(udpPort, inventory);
 
     }
@@ -56,7 +59,7 @@ public class Server {
             ServerSocket listener = new ServerSocket(tcpPort);
             Socket s;
             while ( (s = listener.accept()) != null) {
-                Thread t = new ServerThread(ns.table, s, inventory);
+                Thread t = new TCPServerThread(ns.table, s, inventory);
                 t.start();
             }
         } catch (IOException e) {
@@ -65,7 +68,21 @@ public class Server {
     }
   
     public static void takeUDPRequests(int udpPort, Inventory inventory){
-        
+        try {
+            DatagramPacket datapacket, returnpacket;
+            DatagramSocket datasocket = new DatagramSocket(udpPort);
+            byte[] buf = new byte[Symbols.packetSize];
+            while (true) {
+                datapacket = new DatagramPacket(buf, buf.length);
+                datasocket.receive(datapacket);
+                Thread t = new UDPServerThread(datapacket, datasocket, inventory);
+                t.start();
+            }
+        } catch (SocketException e) {
+            System.err.println(e);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
     }
-  
+    
 }

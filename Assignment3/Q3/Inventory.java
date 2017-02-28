@@ -147,7 +147,7 @@ public class Inventory {
     }
     
     public boolean productAvailable(String product, int quantity){
-        return inventory.get(product) >= quantity;
+        return ((inventory.get(product) >= quantity) && (quantity != 0));
     }
     
     public boolean checkForOrder(int order_id){

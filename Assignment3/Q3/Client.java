@@ -1,6 +1,11 @@
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,8 +83,7 @@ public class Client {
             case TCP:
                 return TCPCommand(command, input);
             case UDP:
-                
-                break;
+                return UDPCommand(command, input);
             default:
                 
                 break;
@@ -112,46 +116,32 @@ public class Client {
         return "ERROR: Nothing happened.";
     }
     
-    public static void processCancel(String command, String[] input){
-        switch(protocol){
-            case TCP:
-                
-                break;
-            case UDP:
-                
-                break;
-            default:
-                
-                break;
+    public static String UDPCommand(String command, String[] input){
+        String hostname = Symbols.nameServer;
+        int port = Symbols.UDPPort;
+        int len = Symbols.packetSize;
+        byte[] rbuffer = new byte[len];
+        DatagramPacket sPacket, rPacket;
+        try {
+            InetAddress ia = InetAddress.getByName(hostname);
+            DatagramSocket datasocket = new DatagramSocket();
+            byte[] buffer = new byte[command.length()];
+            buffer = command.getBytes();
+            sPacket = new DatagramPacket(buffer, len, ia, port);
+            datasocket.send(sPacket);            	
+            rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            datasocket.receive(rPacket);
+            String retstring = new String(rPacket.getData(), 0,
+                rPacket.getLength());
+            return retstring;
+        } catch (UnknownHostException e) {
+            System.err.println(e);
+        } catch (SocketException e) {
+            System.err.println(e);
+        } catch (IOException e) {
+            System.err.println(e);
         }
-    }
-    
-    public static void processSearch(String command, String[] input){
-        switch(protocol){
-            case TCP:
-                
-                break;
-            case UDP:
-                
-                break;
-            default:
-                
-                break;
-        }
-    }
-    
-    public static void processList(String[] input){
-        switch(protocol){
-            case TCP:
-                
-                break;
-            case UDP:
-                
-                break;
-            default:
-                
-                break;
-        }
+        return "ERROR: Failure to retrieve data.";
     }
     
     public static void invalidInputWarning(){
