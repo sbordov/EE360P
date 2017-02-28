@@ -1,29 +1,20 @@
-
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Server {
-    private static NameTable table;
     
     public Server() {
-        table = new NameTable();
     }
     
     
     public static void main (String[] args) {
         int tcpPort;
         int udpPort;
-        /*
+        
         if (args.length != 3) {
             System.out.println("ERROR: Provide 3 arguments");
             System.out.println("\t(1) <tcpPort>: the port number for TCP connection");
@@ -35,10 +26,12 @@ public class Server {
         tcpPort = Integer.parseInt(args[0]);
         udpPort = Integer.parseInt(args[1]);
         String fileName = args[2];
-        */
+        
+        /*
         tcpPort = Symbols.ServerPort;
         udpPort = Symbols.UDPPort;
         String fileName = "C:\\Users\\Stefan\\Documents\\NetBeansProjects\\EE360P\\Assignment3\\Q3\\input\\inventory.txt";
+        */
         
 
         // Parse the inventory file
@@ -66,12 +59,11 @@ public class Server {
         @Override
         public void run() {
             System.out.println("TCP Server started:");
-            Server ns = new Server();
             try {
                 ServerSocket listener = new ServerSocket(port);
                 Socket s;
                 while ( (s = listener.accept()) != null) {
-                    Thread t = new TCPServerThread(ns.table, s, inventory);
+                    Thread t = new TCPServerThread(s, inventory);
                     t.start();
                 }
             } catch (IOException e) {

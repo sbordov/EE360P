@@ -1,7 +1,6 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * TCPServerThread
+ * A class used for TCP communications to manage/sell inventory.
  */
 
 /**
@@ -10,14 +9,17 @@
  */
 import java.net.*; import java.io.*; import java.util.*;
 public class TCPServerThread extends Thread {
-    NameTable table;
     Socket theClient;
     Inventory inventory;
-    public TCPServerThread(NameTable table, Socket s, Inventory inv) {
-        this.table = table;
+    
+    public TCPServerThread(Socket s, Inventory inv) {
         theClient = s;
         inventory = inv;
     }
+    
+    /* run()
+     *      Start TCPServerThread to process commands from a client communicating via TCP.
+     */
     public void run() {
         try {
             Scanner sc = new Scanner(theClient.getInputStream());
@@ -27,21 +29,15 @@ public class TCPServerThread extends Thread {
             String[] tokens = command.split(" ");
 
             String response;
+            // Send appropriate command to the server and display the
+                // appropriate responses from the server
             if (tokens[0].equals("purchase")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
                 response = inventory.processPurchase(tokens);
             } else if (tokens[0].equals("cancel")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
                 response = inventory.processCancel(tokens);
             } else if (tokens[0].equals("search")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
                 response = inventory.processSearch(tokens);
             } else if (tokens[0].equals("list")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
                 response = inventory.processList(tokens);
             } else {
                 response = "ERROR: No such command";

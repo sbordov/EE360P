@@ -15,22 +15,16 @@ public class Client {
     private static Scanner din;
     private static PrintStream pout;
     private static Socket server;
-    public static void getSocket() throws IOException {
-        server = new Socket(Symbols.nameServer, Symbols.ServerPort);
-        din = new Scanner(server.getInputStream());
-        pout = new PrintStream(server.getOutputStream());
-    }
+    private static String hostAddress;
+    private static int tcpPort;
+    private static int udpPort;
     
     public enum Protocol {
         TCP, UDP
     }
     
     public static void main (String[] args) {
-        String hostAddress;
-        int tcpPort;
-        int udpPort;
 
-        /*
         if (args.length != 3) {
             System.out.println("ERROR: Provide 3 arguments");
             System.out.println("\t(1) <hostAddress>: the address of the server");
@@ -39,37 +33,50 @@ public class Client {
             System.exit(-1);
         }
 
+        // Set hostAddress and port numbers from input arguments.
         hostAddress = args[0];
         tcpPort = Integer.parseInt(args[1]);
         udpPort = Integer.parseInt(args[2]);
-        */
+
+        /*
+         //Debugging code.
         tcpPort = Symbols.ServerPort;
         udpPort = Symbols.UDPPort;
         hostAddress = Symbols.nameServer;
+        */
+        
 
         Scanner sc = new Scanner(System.in);
         String response;
+        // Read Client input and pass them along to Server using either UDP or TCP.
         while(sc.hasNextLine()) {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
-
             if (tokens[0].equals("setmode")) {
-                // TODO: set the mode of communication for sending commands to the server 
-                // and display the name of the protocol that will be used in future
                 setMode(tokens[1]);
             }
             else if (tokens[0].equals("purchase") || tokens[0].equals("cancel") ||
                     tokens[0].equals("search") || tokens[0].equals("list")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
-               response = processCommand(cmd, tokens);
+               response = processCommand(cmd, tokens); // Send command to server and process response.
                System.out.println(response);
             } else {
                 System.out.println("ERROR: No such command");
             }
         }
     }
+    
+    /* getSocket()
+     *    Creates a socket and input/output streams for TCP communication.
+     */
+    public static void getSocket() throws IOException {
+        server = new Socket(hostAddress, tcpPort);
+        din = new Scanner(server.getInputStream());
+        pout = new PrintStream(server.getOutputStream());
+    }
   
+    /* setMode()
+     *      Set the mode of communication (either tcp or udp).
+     */
     public static void setMode(String input){
         if(input.equalsIgnoreCase("t")){
             protocol = Protocol.TCP;
@@ -78,6 +85,9 @@ public class Client {
         }
     }
     
+    /* processCommand()
+     *      Process commands with either TCP or UDP protocol.
+     */
     public static String processCommand(String command, String[] input){
         switch(protocol){
             case TCP:
@@ -89,18 +99,21 @@ public class Client {
                 break;
         }
         return "Nothing doing";
-        
-        
     }
     
+    /* TCPCommand()
+     *      Create a socket and write to a serverSocket via TCP
+     */
     public static String TCPCommand(String command, String[] input){
         try {
             getSocket();
+            // Write command to server.
             pout.println(command);
             pout.flush();
             StringBuilder sb = new StringBuilder("");
             String response;
             String prefix = "";
+            // Read response from ServerSocket.
             while(din.hasNextLine()){
                 response = din.nextLine();
                 sb.append(prefix).append(response);
@@ -116,21 +129,28 @@ public class Client {
         return "ERROR: Nothing happened.";
     }
     
+    /* UDPCommand()
+     *      Communicate with Server via UDP by putting commands into packets.
+     */
     public static String UDPCommand(String command, String[] input){
-        String hostname = Symbols.nameServer;
-        int port = Symbols.UDPPort;
+        String hostname = hostAddress;
+        int port = udpPort;
         int len = Symbols.packetSize;
         byte[] rbuffer = new byte[len];
         DatagramPacket sPacket, rPacket;
         try {
             InetAddress ia = InetAddress.getByName(hostname);
+            // Create a UDP socket.
             DatagramSocket datasocket = new DatagramSocket();
             byte[] buffer = new byte[command.length()];
             buffer = command.getBytes();
+            // Load send packet with command and Server port information.
             sPacket = new DatagramPacket(buffer, buffer.length, ia, port);
             datasocket.send(sPacket);            	
             rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+            // Wait for return packet from server.
             datasocket.receive(rPacket);
+            // Read response.
             String retstring = new String(rPacket.getData(), 0,
                 rPacket.getLength());
             return retstring;
@@ -144,6 +164,9 @@ public class Client {
         return "ERROR: Failure to retrieve data.";
     }
     
+    /* invalidInputWarning()
+     *      Warning message for invalid command type.
+     */
     public static void invalidInputWarning(){
         System.out.println("ERROR: Invalid input.");
     }
