@@ -1,7 +1,20 @@
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.Socket;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Client {
     private static Protocol protocol;
+    private static Scanner din;
+    private static PrintStream pout;
+    private static Socket server;
+    public static void getSocket() throws IOException {
+        server = new Socket(Symbols.nameServer, Symbols.ServerPort);
+        din = new Scanner(server.getInputStream());
+        pout = new PrintStream(server.getOutputStream());
+    }
     
     public enum Protocol {
         TCP, UDP
@@ -12,6 +25,7 @@ public class Client {
         int tcpPort;
         int udpPort;
 
+        /*
         if (args.length != 3) {
             System.out.println("ERROR: Provide 3 arguments");
             System.out.println("\t(1) <hostAddress>: the address of the server");
@@ -23,8 +37,13 @@ public class Client {
         hostAddress = args[0];
         tcpPort = Integer.parseInt(args[1]);
         udpPort = Integer.parseInt(args[2]);
+        */
+        tcpPort = Symbols.ServerPort;
+        udpPort = tcpPort;
+        hostAddress = Symbols.nameServer;
 
         Scanner sc = new Scanner(System.in);
+        String response;
         while(sc.hasNextLine()) {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
@@ -34,22 +53,12 @@ public class Client {
                 // and display the name of the protocol that will be used in future
                 setMode(tokens[1]);
             }
-            else if (tokens[0].equals("purchase")) {
+            else if (tokens[0].equals("purchase") || tokens[0].equals("cancel") ||
+                    tokens[0].equals("search") || tokens[0].equals("list")) {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
-                processPurchase(tokens);
-            } else if (tokens[0].equals("cancel")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
-                processCancel(tokens);
-            } else if (tokens[0].equals("search")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
-                processSearch(tokens);
-            } else if (tokens[0].equals("list")) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
-                processList(tokens);
+               response = processCommand(cmd, tokens);
+               System.out.println(response);
             } else {
                 System.out.println("ERROR: No such command");
             }
@@ -64,25 +73,85 @@ public class Client {
         }
     }
     
-    public static void processPurchase(String[] input){
-        if(input.length!= 4){
-            invalidInputWarning();
-            return;
+    public static String processCommand(String command, String[] input){
+        switch(protocol){
+            case TCP:
+                return TCPCommand(command, input);
+            case UDP:
+                
+                break;
+            default:
+                
+                break;
         }
+        return "Nothing doing";
         
         
     }
     
-    public static void processCancel(String[] input){
-        
+    public static String TCPCommand(String command, String[] input){
+        try {
+            getSocket();
+            pout.println(command);
+            pout.flush();
+            StringBuilder sb = new StringBuilder("");
+            String response;
+            String prefix = "";
+            while(din.hasNextLine()){
+                response = din.nextLine();
+                sb.append(prefix).append(response);
+                if(prefix.equals("")){
+                    prefix = "\n";
+                }
+            }
+            server.close();
+            return sb.toString();
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return "ERROR: Nothing happened.";
     }
     
-    public static void processSearch(String[] input){
-        
+    public static void processCancel(String command, String[] input){
+        switch(protocol){
+            case TCP:
+                
+                break;
+            case UDP:
+                
+                break;
+            default:
+                
+                break;
+        }
+    }
+    
+    public static void processSearch(String command, String[] input){
+        switch(protocol){
+            case TCP:
+                
+                break;
+            case UDP:
+                
+                break;
+            default:
+                
+                break;
+        }
     }
     
     public static void processList(String[] input){
-        
+        switch(protocol){
+            case TCP:
+                
+                break;
+            case UDP:
+                
+                break;
+            default:
+                
+                break;
+        }
     }
     
     public static void invalidInputWarning(){

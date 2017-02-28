@@ -30,6 +30,7 @@ public class Inventory {
             String line = br.readLine();
             while (line != null) {
                 stockItem(line);
+                line = br.readLine();
             }
         } catch (IOException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
@@ -39,7 +40,6 @@ public class Inventory {
     public void stockItem(String input){
         String[] tokens = input.split("\\s+");
         if(tokens.length != 2){
-            System.out.println("ERROR: Invalid inventory input.");
             return;
         }
         String item_name = tokens[0];
@@ -54,60 +54,87 @@ public class Inventory {
         }
     }
     
-    public synchronized void processPurchase(String[] tokens){
+    public synchronized String processPurchase(String[] tokens){
+        if(tokens.length != 4){
+            return "Invalid input for purchase.";
+        }
         String user_name = tokens[1];
         String product_name = tokens[2];
         int quantity = Integer.parseInt(tokens[3]);
+        StringBuilder response = new StringBuilder();
         if(!checkForProduct(product_name)){
-            reply("Not Available - We do not sell this product.");
-            System.out.println("Not Available - We do not sell this product.");
-            return;
+            response.append("Not Available - We do not sell this product.");
+            //reply("Not Available - We do not sell this product.");
+            return response.toString();
         } else if(!productAvailable(product_name, quantity)){
-            reply("Not Available - Not enough items");
-            System.out.println("Not Available - Not enough items");
-            return;
+            response.append("Not Available - Not enough items");
+            //reply("Not Available - Not enough items");
+            return response.toString();
         }
-        makeNewOrder(user_name, product_name, quantity);
+        return makeNewOrder(user_name, product_name, quantity);
     }
     
-    public synchronized void processCancel(String[] tokens){
+    public synchronized String processCancel(String[] tokens){
+        if(tokens.length != 1){
+            return "Invalid input for cancel.";
+        }
         int order_id = Integer.parseInt(tokens[1]);
+        StringBuilder response = new StringBuilder();
         if(!checkForOrder(order_id)){
-            reply(order_id + " not found, no such order.");
-            return;
+            response.append(order_id).append(" not found, no such order.");
+           // reply(order_id + " not found, no such order.");
+            return response.toString();
         }
-        removeOrder(order_id);
+        return removeOrder(order_id);
     }
     
-    public synchronized void processSearch(String[] tokens){
-        String user_name = tokens[1];
+    public synchronized String processSearch(String[] tokens){
+        if(tokens.length != 2){
+            return "Invalid input for search.";
+        }
         boolean order_found = false;
+        String user_name = tokens[1];
+        StringBuilder response = new StringBuilder("");
         for(int order_id : orders.keySet()){
             Order o = orders.get(order_id);
             if(o.user_name.equals(user_name)){
+                response.append(o.id).append(", ").append(o.product_name);
+                response.append(", ").append(o.quantity).append("\n");
                 order_found = true;
-                reply(o.id + ", " + o.product_name, ", " + o.quantity);
+                //reply(o.id + ", " + o.product_name, ", " + o.quantity);
             }
         }
-        if(!order_found){
-            reply("No order found for " + user_name);
+        if(order_found){
+            return response.toString();
         }
+        response.append("No order found for ").append(user_name);
+            //reply("No order found for " + user_name);
+        return response.toString();
     }
     
-    public synchronized void processList(String[] tokens){
+    public synchronized String processList(String[] tokens){
+        StringBuilder response = new StringBuilder("");
         for(String product : inventory.keySet()){
-            reply(product + " " +  inventory.get(product));
+            response.append(product).append(" ").append(inventory.get(product));
+            response.append("\n");
+            //reply(product + " " +  inventory.get(product));
         }
+        return response.toString();
         
     }
     
-    public void makeNewOrder(String user_name, String product_name, int quantity){
+    public String makeNewOrder(String user_name, String product_name, int quantity){
         Order this_order = new Order(getOrderNumber(), user_name, product_name, quantity);
         orders.put(this_order.id, this_order);
         int new_item_quantity = inventory.get(product_name) - quantity;
         inventory.put(product_name, new_item_quantity);
-        reply("Your order has been placed, " + this_order.id + " " + user_name + " " + 
-                product_name + " " + quantity);
+        StringBuilder response = new StringBuilder();
+        response.append("Your order has been placed, ").append(this_order.id);
+        response.append(" ").append(user_name).append(" ").append(product_name);
+        response.append(" ").append(quantity);
+        /* reply("Your order has been placed, " + this_order.id + " " + user_name + " " + 
+                product_name + " " + quantity); */
+        return response.toString();
         
     }
     
@@ -127,13 +154,15 @@ public class Inventory {
         return orders.containsKey(order_id);
     }
     
-    public void removeOrder(int order_id){
+    public String removeOrder(int order_id){
         Order this_order = orders.get(order_id);
         int quantity = this_order.quantity;
         String product = this_order.product_name;
         int new_item_quantity = inventory.get(product) + quantity;
         inventory.put(product, new_item_quantity);
         orders.remove(order_id);
-        reply("Order " + order_id + " is cancelled.");
+        StringBuilder response = new StringBuilder();
+        response.append("Order ").append(order_id).append(" is cancelled.");
+        return response.toString();
     }
 }

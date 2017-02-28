@@ -20,6 +20,7 @@ public class Server {
     public static void main (String[] args) {
         int tcpPort;
         int udpPort;
+        /*
         if (args.length != 3) {
             System.out.println("ERROR: Provide 3 arguments");
             System.out.println("\t(1) <tcpPort>: the port number for TCP connection");
@@ -31,6 +32,11 @@ public class Server {
         tcpPort = Integer.parseInt(args[0]);
         udpPort = Integer.parseInt(args[1]);
         String fileName = args[2];
+        */
+        tcpPort = Symbols.ServerPort;
+        udpPort = tcpPort;
+        String fileName = "C:\\Users\\Stefan\\Documents\\NetBeansProjects\\EE360P\\Assignment3\\Q3\\input\\inventory.txt";
+        
 
         // Parse the inventory file
         Inventory inventory = new Inventory();
@@ -39,12 +45,13 @@ public class Server {
 
         // TODO: handle request from clients
         takeTCPRequests(tcpPort, inventory);
+        takeUDPRequests(udpPort, inventory);
 
     }
   
     public static void takeTCPRequests(int tcpPort, Inventory inventory){
-        Server ns = new Server();
         System.out.println("Server started:");
+        Server ns = new Server();
         try {
             ServerSocket listener = new ServerSocket(tcpPort);
             Socket s;
@@ -58,7 +65,7 @@ public class Server {
     }
   
     public static void takeUDPRequests(int udpPort, Inventory inventory){
-
+        
     }
   
 }

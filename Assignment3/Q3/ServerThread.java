@@ -26,26 +26,27 @@ public class ServerThread extends Thread {
             System.out.println("received:" + command);
             String[] tokens = command.split(" ");
 
+            String response;
             if (tokens[0].equals("purchase")) {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
-                inventory.processPurchase(tokens);
+                response = inventory.processPurchase(tokens);
             } else if (tokens[0].equals("cancel")) {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
-                inventory.processCancel(tokens);
+                response = inventory.processCancel(tokens);
             } else if (tokens[0].equals("search")) {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
-                inventory.processSearch(tokens);
+                response = inventory.processSearch(tokens);
             } else if (tokens[0].equals("list")) {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
-                inventory.processList(tokens);
+                response = inventory.processList(tokens);
             } else {
-                System.out.println("ERROR: No such command");
+                response = "ERROR: No such command";
             }
-            
+            pout.print(response);
             pout.flush();
             theClient.close();
         } catch (IOException e) {
