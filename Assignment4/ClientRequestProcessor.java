@@ -9,18 +9,16 @@
  * @author Stefan
  */
 import java.net.*; import java.io.*; import java.util.*;
-public class ClientRequestProcessor extends Thread {
-    Socket otherServer;
-    PrintWriter pout;
-    String[] communicationTokens;
-    Inventory inventory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+public class ClientRequestProcessor extends RequestProcessor implements Runnable {
     
-    public ClientRequestProcessor(Socket s, PrintWriter pOut, String[] tokens,
-            Inventory inv) {
-        otherServer = s;
-        pout = pOut;
-        communicationTokens = tokens;
-        inventory = inv;
+    public ClientRequestProcessor(Socket s, String[] tokens, Server server) {
+        super(s, tokens, server);
+    }
+    
+    public void processInput(String[] input){
+        
     }
     
     /* run()
@@ -32,25 +30,28 @@ public class ClientRequestProcessor extends Thread {
             String response;
             // New requests include server/client designator token, so trim this off tokens
             //      to pass into reused inventory processing code.
-            String[] tokens = Arrays.copyOfRange(communicationTokens, 1,
-                communicationTokens.length - 1);
+            String[] request = (String[]) requestTokens.get();
+            String[] tokens = Arrays.copyOfRange(request, 1,
+                request.length - 1);
             // Send appropriate command to the server and display the
                 // appropriate responses from the server
             mutexServerAccess();
             if (tokens[0].equals("purchase")) {
-                response = inventory.processPurchase(tokens);
+                response = myServer.inventory.processPurchase(tokens);
             } else if (tokens[0].equals("cancel")) {
-                response = inventory.processCancel(tokens);
+                response = myServer.inventory.processCancel(tokens);
             } else if (tokens[0].equals("search")) {
-                response = inventory.processSearch(tokens);
+                response = myServer.inventory.processSearch(tokens);
             } else if (tokens[0].equals("list")) {
-                response = inventory.processList(tokens);
+                response = myServer.inventory.processList(tokens);
             } else {
                 response = "ERROR: No such command";
             }
-            pout.print(response);
-            pout.flush();
-            otherServer.close();
+            PrintWriter pOut = (PrintWriter) pout.get();
+            pOut.print(response);
+            pOut.flush();
+            Socket s = (Socket) otherServer.get();
+            s.close();
         } catch (IOException e) {
             System.err.println(e);
         }

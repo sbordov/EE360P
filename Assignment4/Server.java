@@ -11,39 +11,53 @@ import java.util.logging.Logger;
 
 public class Server {
     
-    private static int numServers;
-    private static int myId;
-    private static double myTs = Double.POSITIVE_INFINITY;
-    private static PriorityQueue<Integer> pendingQ = new PriorityQueue<>();
-    private static int numOkay = 0;
-    private static HashMap<Integer, ServerInfo> servers = new HashMap<>();
-    private static Inventory inventory = new Inventory();
+    protected int myId;
+    protected int numFunctioningServers;
+    protected LamportClock clock;
+    protected PriorityQueue<ServerUpdateRequest> pendingQ;
+    protected HashMap<Integer, ServerInfo> serverList;
+    protected Inventory inventory;
+    
+    public Server(int id, int numServers){
+        this.myId = id;
+        this.numFunctioningServers = numServers;
+        this.clock = new LamportClock();
+        this.pendingQ = new PriorityQueue<>();
+        this.serverList = new HashMap<>();
+        this.inventory = new Inventory();
+        
+    }
     
     public static void main (String[] args) {
 
         Scanner sc = new Scanner(System.in);
-        myId = sc.nextInt();
+        int id, numServers;
+        id = sc.nextInt();
         numServers = sc.nextInt();
         String inventoryPath = sc.next();
+        Server myServer = new Server(id, numServers);
 
-        System.out.println("[DEBUG] my id: " + myId);
+        System.out.println("[DEBUG] my id: " + id);
         System.out.println("[DEBUG] numServer: " + numServers);
         System.out.println("[DEBUG] inventory path: " + inventoryPath);
-        for (int i = 0; i < numServers; i++) {
+        for (int i = 0; i < myServer.getNumFunctioningServers(); i++) {
             // TODO: parse inputs to get the ips and ports of servers
             String str = sc.next();
             System.out.println("address for server " + i + ": " + str);
-            servers.put(i, new ServerInfo(str)); // Populate server list with info of other servers.
+            myServer.getServerList().put(i, new ServerInfo(str)); // Populate server list with info of servers.
         }
+        // Parse the inventory file
+        myServer.setInventoryFromFile(inventoryPath);
+        myServer.listen();
   
+    }
+    
+    public void listen(){
         while (true) {
             try {
                 // Start server socket to communicate with clients and other servers
-                System.out.println("TCP Server started:");
-                ServerSocket listener = new ServerSocket(servers.get(myId).getPortNumber());
-
-                // Parse the inventory file
-                inventory.parseInventory(inventoryPath);
+                System.out.println("Server " + this.myId + " started.");
+                ServerSocket listener = new ServerSocket(this.getServerList().get(myId).getPortNumber());
 
                 // TODO: handle request from client
                 Socket s;
@@ -54,25 +68,39 @@ public class Server {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-    
     }
   
-    public static void processRequest(Socket s){
+    public void processRequest(Socket s){
         try {
             Scanner sc = new Scanner(s.getInputStream());
-            PrintWriter pout = new PrintWriter(s.getOutputStream());
             String command = sc.nextLine();
-            String[] tokens = command.split(" ");
-            if(tokens[0].equals("SERVER CONNECTION")){
-                Thread t = new ServerRequestProcessor(s, pout, tokens, inventory);
-                t.start();
-            } else if(tokens[0].equals("CLIENT CONNECTION")){
-                Thread t = new ClientRequestProcessor(s, pout, tokens, inventory);
+            String[] tokens = command.split(";");
+            Runnable requestProcessor = null;
+            if(tokens[0].equals(Symbols.serverMessageHeader)){
+                requestProcessor = new ServerRequestProcessor(s, tokens, this);
+            } else if(tokens[0].equals(Symbols.clientMessageHeader)){
+                requestProcessor = new ClientRequestProcessor(s, tokens, this);
+            }
+            if(requestProcessor != null){
+                Thread t = new Thread(requestProcessor);
                 t.start();
             }
         } catch (IOException e) {
             System.err.println(e);
         }
+    }
+    
+    
+    public HashMap<Integer, ServerInfo> getServerList(){
+        return this.serverList;
+    }
+    
+    public int getNumFunctioningServers(){
+        return this.numFunctioningServers;
+    }
+    
+    public void setInventoryFromFile(String inventoryPath){
+        inventory.parseInventory(inventoryPath);
     }
   
 }
