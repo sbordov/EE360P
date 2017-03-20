@@ -15,6 +15,7 @@ public class Server {
     protected int numFunctioningServers;
     protected LamportClock clock;
     protected PriorityQueue<ServerUpdateRequest> pendingQ;
+    protected HashMap<Integer, ServerUpdateRequest> myProcesses;
     protected HashMap<Integer, ServerInfo> serverList;
     protected Inventory inventory;
     
@@ -22,7 +23,7 @@ public class Server {
         this.myId = id;
         this.numFunctioningServers = numServers;
         this.clock = new LamportClock();
-        this.pendingQ = new PriorityQueue<>();
+        this.pendingQ = new PriorityQueue<>(Symbols.INITIAL_QUEUE_CAPACITY, new ServerUpdateRequestComparator());
         this.serverList = new HashMap<>();
         this.inventory = new Inventory();
         
@@ -90,6 +91,10 @@ public class Server {
         }
     }
     
+    public synchronized void insertToPendingQueue(ServerUpdateRequest request){
+        this.pendingQ.offer(request);
+    }
+    
     
     public HashMap<Integer, ServerInfo> getServerList(){
         return this.serverList;
@@ -102,5 +107,5 @@ public class Server {
     public void setInventoryFromFile(String inventoryPath){
         inventory.parseInventory(inventoryPath);
     }
-  
+    
 }

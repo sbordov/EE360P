@@ -17,18 +17,57 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
     private static PriorityQueue<ClientRequest> pendingQ = new PriorityQueue<>();
     private Inventory inventory;
     */
+    private ThreadLocal<Integer> numAcks = new ThreadLocal<>();
+    private ThreadLocal<Integer> hisTs = new ThreadLocal<>();
+    private ThreadLocal<Integer> hisId = new ThreadLocal<>();
+    private ThreadLocal<MessageType> messageType = new ThreadLocal<>();
+
     
     public ServerRequestProcessor(Socket s, String[] input,
             Server server) {
         super(s, input, server);
+        numAcks.set(0);
+        
     }
     
-    public void processInput(String[] input){
+    public void processInput(){
+        String[] input = (String[]) inputTokens.get();
+        if(input[1].equals("ACK")){
+            messageType.set(MessageType.ACK);
+            onReceiveAck(input);
+        } else if(input[1].equals("REQUEST")){
+            messageType.set(MessageType.REQUEST);
+            onReceiveRequest(input);
+        } else{
+            throw new UnsupportedOperationException("Received neither ACK nor REQUEST");
+        }
+    }
+    
+    public void onReceiveAck(String[] input){
+        int serverId = Integer.parseInt(input[2]);
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+        int id = Integer.parseInt(input[4]);
         
-        String[] clockTokens = input[1].split(":");
-        hisId = Integer.parseInt(clockTokens[0]);
-        hisTs = Integer.parseInt(clockTokens[1]);
-        requestTokens.set(input[2].split("\\s"));
+        
+    }
+    
+    public void onReceiveRequest(String[] input){
+        int serverId = Integer.parseInt(input[2]);
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+        int id = Integer.parseInt(input[4]);
+        String[] reqTokens = input[5].split("\\s");
+        ServerUpdateRequest request = new ServerUpdateRequest(time, id, reqTokens);
+        myServer.insertToPendingQueue(request);
+        sendAck(id);
+    }
+    
+    public void sendAck(int id){
+        StringBuilder ackMessage = new StringBuilder();
+        ackMessage.append(Symbols.serverMessageHeader).append(Symbols.ackMessageTag);
+        ackMessage.append(Integer.toString(myServer.clock.sendAction()));
+        ackMessage.append(Integer.toString(id));
     }
     
     /* run()

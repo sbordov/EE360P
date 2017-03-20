@@ -9,13 +9,21 @@
  * @author Stefan
  */
 public class ServerUpdateRequest {
+    public int serverId;
+    public int timeStamp;
     public int processId;
-    public int logicalClock;
     public String[] processTokens;
+    public int numAcks = 0;
     
-    public ServerUpdateRequest(int id, int clock, String[] tokens){
+    public ServerUpdateRequest(int server, int time, int id, String[] tokens){
+        serverId = server;
+        timeStamp = time;
         processId = id;
-        logicalClock = clock;
         processTokens = tokens;
     }
+    
+    public synchronized int incrementAndGetNumAcks(){
+        return ++numAcks;
+    }
+    
 }

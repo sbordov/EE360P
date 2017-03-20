@@ -13,17 +13,18 @@ public class LamportClock {
     public LamportClock() {
         c = 1;
     }
-    public int getValue() {
+    public synchronized int getValue() {
         return c;
     }
-    public void tick() { // on internal events
+    public synchronized void tick() { // on internal events
         c = c + 1;
     }
-    public void sendAction() {
+    public synchronized int sendAction() {
        // include c in message
         c = c + 1;      
+        return c;
     }
-    public void receiveAction(int src, int sentValue) {
+    public synchronized void receiveAction(int sentValue) {
         c = Math.max(c, sentValue) + 1;
     }
 }

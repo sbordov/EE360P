@@ -17,8 +17,9 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         super(s, tokens, server);
     }
     
-    public void processInput(String[] input){
-        
+    //TODO
+    public void processInput(){
+        String[] input = (String[]) inputTokens.get();
     }
     
     /* run()
@@ -28,11 +29,14 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
     public void run() {
         try {
             String response;
+            processInput();
             // New requests include server/client designator token, so trim this off tokens
             //      to pass into reused inventory processing code.
+            /*
             String[] request = (String[]) requestTokens.get();
             String[] tokens = Arrays.copyOfRange(request, 1,
                 request.length - 1);
+            */
             // Send appropriate command to the server and display the
                 // appropriate responses from the server
             mutexServerAccess();

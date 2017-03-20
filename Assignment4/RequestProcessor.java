@@ -15,11 +15,17 @@ import java.util.logging.Logger;
  *
  * @author Stefan
  */
-public abstract class RequestProcessor {
+public abstract class RequestProcessor implements Runnable{
     protected ThreadLocal<Socket> otherServer;
     protected ThreadLocal<PrintWriter> pout;
+    protected ThreadLocal<String[]> inputTokens;
     protected ThreadLocal<String[]> requestTokens;
     protected Server myServer;
+    
+    protected enum MessageType{
+        REQUEST,
+        ACK
+    };
     
     public RequestProcessor(Socket s, String[] input,
             Server server) {
@@ -29,7 +35,7 @@ public abstract class RequestProcessor {
         } catch (IOException ex) {
             Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
         }
-        processInput(input);
+        inputTokens.set(input);
         myServer = server;
         /*
         clock = c;
@@ -38,5 +44,12 @@ public abstract class RequestProcessor {
         */
     }
     
-    protected abstract void processInput(String[] input);
+    protected abstract void processInput();
+    
+    protected abstract void send(String message);
+    
+    @Override
+    public void run(){
+        processInput();
+    }
 }
