@@ -48,8 +48,12 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
         int id = Integer.parseInt(input[4]);
-        
-        
+        boolean enoughAcks = myServer.incrementNumAcks(id);
+        boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
+        if(enoughAcks && isSmallestProcessInQueue){
+            performTransaction(id);
+            sendRelease(id);
+        }
     }
     
     public void onReceiveRequest(String[] input){
@@ -58,16 +62,57 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         myServer.clock.receiveAction(time);
         int id = Integer.parseInt(input[4]);
         String[] reqTokens = input[5].split("\\s");
-        ServerUpdateRequest request = new ServerUpdateRequest(time, id, reqTokens);
+        ServerUpdateRequest request = new ServerUpdateRequest(serverId, time, id, reqTokens);
         myServer.insertToPendingQueue(request);
         sendAck(id);
     }
     
+    // ACK Message has the following format:
+    //  "SERVER_CONNECTION;ACK;<Server_Id>;<Time_Stamp>;<ACKed_Process_Id>"
     public void sendAck(int id){
         StringBuilder ackMessage = new StringBuilder();
-        ackMessage.append(Symbols.serverMessageHeader).append(Symbols.ackMessageTag);
-        ackMessage.append(Integer.toString(myServer.clock.sendAction()));
+        // "SERVER_CONNECTION;"
+        ackMessage.append(Symbols.serverMessageHeader);
+        // "ACK;"
+        ackMessage.append(Symbols.ackMessageTag);
+        // "<Server_Id>;"
+        ackMessage.append(Integer.toString(myServer.myId)).append(";");
+        // "<Time_Stamp>;"
+        ackMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
+        // "<ACKed_Process_Id>"
         ackMessage.append(Integer.toString(id));
+        send(ackMessage.toString());
+    }
+    
+    // RELEASE Message has the following format:
+    //  "SERVER_CONNECTION;RELEASE;<Server_Id>;<Time_Stamp>;<Released_Process_Id>"
+    public void sendRelease(int id){
+        StringBuilder releaseMessage = new StringBuilder();
+        // "SERVER_CONNECTION;"
+        releaseMessage.append(Symbols.serverMessageHeader);
+        // "RELEASE;"
+        releaseMessage.append(Symbols.releaseMessageTag);
+        // "<Server_Id>;"
+        releaseMessage.append(Integer.toString(myServer.myId)).append(";");
+        // "<Time_Stamp>;"
+        releaseMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
+        // "<RELEASEd_Process_Id>"
+        releaseMessage.append(Integer.toString(id));
+        
+        sendToAll(releaseMessage.toString());
+        
+    }
+    
+    public void send(String message){
+        try {
+            Socket s = (Socket) otherServer.get();
+            PrintWriter pOut = (PrintWriter) pout.get();
+            pOut.print(message);
+            pOut.flush();
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     /* run()
@@ -75,6 +120,7 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
      *      
      */
     public void run() {
+        processInput();
         try {
             StringBuilder response = new StringBuilder();
             response.append(Symbols.serverMessageHeader);

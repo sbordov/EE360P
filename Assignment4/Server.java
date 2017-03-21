@@ -108,4 +108,29 @@ public class Server {
         inventory.parseInventory(inventoryPath);
     }
     
+    public synchronized boolean incrementNumAcks(int processId)
+            throws NullPointerException{
+        ServerUpdateRequest process = myProcesses.get(processId);
+        if(process == null){
+            throw new NullPointerException("Process not found.");
+        }
+        int numAcks = process.incrementAndGetNumAcks();
+        if(numAcks == numFunctioningServers - 1){
+            return true;
+        }
+        return false;
+    }
+    
+    public synchronized boolean isProcessAtFrontOfQueue(int processId)
+            throws NullPointerException{
+        ServerUpdateRequest process = pendingQ.peek();
+        if(process == null){
+            throw new NullPointerException("Process not found.");
+        }
+        if((process.processId == processId) && (process.serverId == this.myId)){
+            return true;
+        } else{
+            return false;
+        }
+    }
 }
