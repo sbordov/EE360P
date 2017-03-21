@@ -45,7 +45,7 @@ public class Server {
             // TODO: parse inputs to get the ips and ports of servers
             String str = sc.next();
             System.out.println("address for server " + i + ": " + str);
-            myServer.getServerList().put(i, new ServerInfo(str)); // Populate server list with info of servers.
+            myServer.getServerList().put(i + 1, new ServerInfo(str)); // Populate server list with info of servers.
         }
         // Parse the inventory file
         myServer.setInventoryFromFile(inventoryPath);
@@ -121,6 +121,19 @@ public class Server {
         return false;
     }
     
+    public synchronized boolean checkNumAcks(int processId)
+        throws NullPointerException{
+        ServerUpdateRequest process = myProcesses.get(processId);
+        if(process == null){
+            throw new NullPointerException("Process not found.");
+        }
+        int numAcks = process.getNumAcks();
+        if(numAcks == numFunctioningServers - 1){
+            return true;
+        }
+        return false;
+    }
+    
     public synchronized boolean isProcessAtFrontOfQueue(int processId)
             throws NullPointerException{
         ServerUpdateRequest process = pendingQ.peek();
@@ -132,5 +145,11 @@ public class Server {
         } else{
             return false;
         }
+    }
+    
+    // TODO: Make changes to inventory based on first ServerUpdateRequest in
+    //      pendingQ, and remove ServerUpdateRequest from queue.
+    public synchronized void processTransaction(){
+        
     }
 }

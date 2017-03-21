@@ -26,4 +26,8 @@ public class ServerUpdateRequest {
         return ++numAcks;
     }
     
+    public synchronized int getNumAcks(){
+        return numAcks;
+    }
+    
 }

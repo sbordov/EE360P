@@ -33,11 +33,11 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
     public void processInput(){
         String[] input = (String[]) inputTokens.get();
         if(input[1].equals("ACK")){
-            messageType.set(MessageType.ACK);
             onReceiveAck(input);
         } else if(input[1].equals("REQUEST")){
-            messageType.set(MessageType.REQUEST);
             onReceiveRequest(input);
+        } else if(input[1].equals("RELEASE")){
+            onReceiveRelease(input);
         } else{
             throw new UnsupportedOperationException("Received neither ACK nor REQUEST");
         }
@@ -51,7 +51,7 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         boolean enoughAcks = myServer.incrementNumAcks(id);
         boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
         if(enoughAcks && isSmallestProcessInQueue){
-            performTransaction(id);
+            myServer.performTransaction();
             sendRelease(id);
         }
     }
@@ -65,6 +65,25 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         ServerUpdateRequest request = new ServerUpdateRequest(serverId, time, id, reqTokens);
         myServer.insertToPendingQueue(request);
         sendAck(id);
+    }
+    
+    public void onReceiveRelease(String[] input){
+        int serverId = Integer.parseInt(input[2]);
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+        myServer.performTransaction();
+        ServerUpdateRequest nextProcess = myServer.pendingQ.peek();
+        if(nextProcess == null){
+            return;
+        }
+        int id = nextProcess.processId;
+        boolean enoughAcks = myServer.checkNumAcks(nextProcess.processId);
+        boolean isSmallestProcessInQueue =
+                myServer.isProcessAtFrontOfQueue(nextProcess.processId);
+        if(enoughAcks && isSmallestProcessInQueue){
+            myServer.performTransaction();
+            sendRelease(id);
+        }
     }
     
     // ACK Message has the following format:
@@ -98,9 +117,31 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         releaseMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
         // "<RELEASEd_Process_Id>"
         releaseMessage.append(Integer.toString(id));
+        Socket s = (Socket) otherServer.get();
+        try {
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         sendToAll(releaseMessage.toString());
         
+    }
+    
+    public void sendToAll(String message){
+        for(Integer serverId : myServer.serverList.keySet()){
+            if(serverId != myServer.myId){
+                try {
+                    Socket s = getSocket(myServer.serverList.get(serverId));
+                    PrintStream printStreamOut = (PrintStream) psOut.get();
+                    printStreamOut.println(message);
+                    printStreamOut.flush();
+                    s.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
     
     public void send(String message){

@@ -12,6 +12,7 @@ public class ServerInfo {
     
     private String ipAddress;
     private int portNum;
+    private int id;
 
     public ServerInfo(String input){
       String[] info = input.split(":");
