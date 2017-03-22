@@ -135,7 +135,7 @@ public class Server {
     }
     
     public synchronized boolean isProcessAtFrontOfQueue(int processId)
-            throws NullPointerException{
+            throws NullPointerException {
         ServerUpdateRequest process = pendingQ.peek();
         if(process == null){
             throw new NullPointerException("Process not found.");

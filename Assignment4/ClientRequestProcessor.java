@@ -12,16 +12,16 @@ import java.net.*; import java.io.*; import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 public class ClientRequestProcessor extends RequestProcessor implements Runnable {
-    
+
     public ClientRequestProcessor(Socket s, String[] tokens, Server server) {
         super(s, tokens, server);
     }
-    
+
     //TODO
     public void processInput(){
         String[] input = (String[]) inputTokens.get();
     }
-    
+
     /* run()
      *      Start TCPServerThread to process commands from a client communicating via TCP.
      *      Borrows from Dr. Garg's ServerThread.java class on EE360P Github.
@@ -40,14 +40,14 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
             // Send appropriate command to the server and display the
                 // appropriate responses from the server
             mutexServerAccess();
-            if (tokens[0].equals("purchase")) {
-                response = myServer.inventory.processPurchase(tokens);
-            } else if (tokens[0].equals("cancel")) {
-                response = myServer.inventory.processCancel(tokens);
-            } else if (tokens[0].equals("search")) {
-                response = myServer.inventory.processSearch(tokens);
-            } else if (tokens[0].equals("list")) {
-                response = myServer.inventory.processList(tokens);
+            if (inputTokens.get()[0].equals("purchase")) {
+                response = myServer.inventory.processPurchase(inputTokens.get());
+            } else if (inputTokens.get()[0].equals("cancel")) {
+                response = myServer.inventory.processCancel(inputTokens.get());
+            } else if (inputTokens.get()[0].equals("search")) {
+                response = myServer.inventory.processSearch(inputTokens.get());
+            } else if (inputTokens.get()[0].equals("list")) {
+                response = myServer.inventory.processList(inputTokens.get());
             } else {
                 response = "ERROR: No such command";
             }
@@ -61,5 +61,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         }
 
     }
+
+
 }
 
