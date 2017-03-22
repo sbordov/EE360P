@@ -22,6 +22,19 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         String[] input = (String[]) inputTokens.get();
     }
 
+    @Override
+    protected void send(String message) {
+        try {
+            Socket s = (Socket) otherServer.get();
+            PrintWriter pOut = (PrintWriter) pout.get();
+            pOut.print(message);
+            pOut.flush();
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     /* run()
      *      Start TCPServerThread to process commands from a client communicating via TCP.
      *      Borrows from Dr. Garg's ServerThread.java class on EE360P Github.
