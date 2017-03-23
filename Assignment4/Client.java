@@ -33,7 +33,9 @@ public class Client {
             System.out.println("address for server " + i + ": " + str);
             client.getServerList().add(new ServerInfo(str)); // Populate server list with info of servers.
         }
-
+        if(sc.hasNext()){
+            sc.nextLine();
+        }
         while(sc.hasNextLine()) {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
