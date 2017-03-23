@@ -20,11 +20,12 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
     //TODO
     public void processInput(){
         String[] input = this.getInputTokens();
+        String[] tokens = input[1].split("\\s");
         int serverId = myServer.myId;
         int time = myServer.clock.sendAction();
         int processId = myServer.getAndIncrementNextNewProcessId();
         ServerUpdateRequest request = new ServerUpdateRequest(serverId, time,
-                processId, input);
+                processId, tokens);
         myServer.insertToPendingQueue(request);
         myServer.insertToMyProcesses(request);
         Socket s = this.getOtherServer();
@@ -100,12 +101,6 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         requestMessage.append(Symbols.messageDelimiter);
         // "<Requested process>"
         requestMessage.append(parcelRequest(id));
-        Socket s = this.getOtherServer();
-        try {
-            s.close();
-        } catch (IOException ex) {
-            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
-        }
 
         sendRequestToAll(requestMessage.toString());
 
