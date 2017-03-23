@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,8 +65,8 @@ public class Client {
             ServerInfo myServer = serverList.get(0);
             String hostAddress = myServer.getIpAddress();
             int port = myServer.getPortNumber();
-            server = new Socket(hostAddress, port);
-            server.setSoTimeout(Symbols.TIMEOUT_DURATION);
+            server = new Socket();
+            server.connect(new InetSocketAddress(hostAddress, port), 100);
             din = new Scanner(server.getInputStream());
             pout = new PrintStream(server.getOutputStream());
         }
