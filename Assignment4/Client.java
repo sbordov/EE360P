@@ -86,13 +86,14 @@ public class Client {
             // Read response from ServerSocket.
             while(din.hasNextLine()){
                 response = din.nextLine();
-                if(!response.equals("Still processing...")){
+                if(!response.equals(Symbols.assuranceMessage)){
                     sb.append(prefix).append(response);
                     if(prefix.equals("")){
                         prefix = "\n";
                     }
                 }
             }
+            System.out.println(sb.toString());
             pout.close();
             din.close();
             server.close();

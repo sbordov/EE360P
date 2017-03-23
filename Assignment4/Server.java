@@ -20,6 +20,7 @@ public class Server {
     protected HashMap<Integer, Socket> clients;
     protected HashMap<Integer, ClientAssuranceThread> clientAssuranceThreads;
     protected HashMap<Integer, ServerInfo> serverList;
+    protected HashMap<Integer, Integer> brokenServerIds;
     protected Inventory inventory;
     protected int nextNewProcessId = 0;
     
@@ -31,6 +32,7 @@ public class Server {
         this.clients = new HashMap<>();
         this.clientAssuranceThreads = new HashMap<>();
         this.serverList = new HashMap<>();
+        this.brokenServerIds = new HashMap<>();
         this.inventory = new Inventory();
         
     }
@@ -69,6 +71,7 @@ public class Server {
                 // TODO: handle request from client
                 Socket s;
                 while ( (s = listener.accept()) != null) {
+                    s.setSoTimeout(Symbols.TIMEOUT_DURATION);
                     processRequest(s);
                 }
             } catch (IOException ex) {
@@ -81,6 +84,13 @@ public class Server {
         try {
             Scanner sc = new Scanner(s.getInputStream());
             String command = sc.nextLine();
+            while(sc.nextLine().equals(Symbols.assuranceMessage) && sc.hasNextLine()){
+                command = sc.nextLine();
+            }
+            if(command.equals(Symbols.assuranceMessage)){
+                System.out.println("Potential server crash.");
+                return;
+            }
             String[] tokens = command.split(";");
             Runnable requestProcessor = null;
             if(tokens[0].equals(Symbols.serverMessageHeader)){
@@ -92,6 +102,8 @@ public class Server {
                 Thread t = new Thread(requestProcessor);
                 t.start();
             }
+        } catch(java.net.SocketTimeoutException e){
+            
         } catch (IOException e) {
             System.err.println(e);
         }
@@ -125,6 +137,19 @@ public class Server {
     
     public void setInventoryFromFile(String inventoryPath){
         inventory.parseInventory(inventoryPath);
+    }
+    
+    public synchronized void removeServerFromList(int id){
+        if(serverList.containsKey(id)){
+            serverList.remove(id);
+        }
+    }
+    
+    public synchronized void addBrokenServerToList(int id){
+        if(!brokenServerIds.containsKey(id)){
+            brokenServerIds.put(id, id);
+            numFunctioningServers--;
+        }
     }
     
     public synchronized boolean incrementNumAcks(int processId)

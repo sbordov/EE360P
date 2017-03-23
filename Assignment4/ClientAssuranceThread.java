@@ -33,7 +33,7 @@ public class ClientAssuranceThread extends Thread{
         PrintWriter pout = (PrintWriter) pOut.get();
         try{
             this.sleep(50);
-            pout.print("Sweet nothings");
+            pout.print(Symbols.assuranceMessage);
             pout.flush();
         } catch(InterruptedException e){
             pout.close();

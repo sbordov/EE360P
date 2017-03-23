@@ -32,11 +32,12 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         sendRequest(processId);
     }
 
-    public void sendRequestToAll(String message){
+    public synchronized void sendRequestToAll(String message){
         for(Integer serverId : myServer.serverList.keySet()){
             if(serverId != myServer.myId){
                 try {
                     Socket s = getSocket(myServer.serverList.get(serverId));
+                    s.setSoTimeout(Symbols.TIMEOUT_DURATION);
                     PrintStream printStreamOut = (PrintStream) psOut.get();
                     printStreamOut.println(message);
                     printStreamOut.flush();
@@ -49,9 +50,17 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
                     }
                     s.close();
                 } catch (IOException ex) {
-                    Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                    if(ex instanceof java.net.SocketTimeoutException){
+                        myServer.addBrokenServerToList(serverId);
+                    } else{
+                        System.out.println("Not exactly what I wanted");
+                        Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
+        }
+        for(int id: myServer.brokenServerIds.keySet()){
+            myServer.removeServerFromList(id);
         }
     }
     
