@@ -74,6 +74,47 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         }
 
     }
+    public void mutexServerAccess(){
+
+    }
+    public void sendToAll(String message){
+        for(Integer serverId : myServer.serverList.keySet()){
+            if(serverId != myServer.myId){
+                try {
+                    Socket s = getSocket(myServer.serverList.get(serverId));
+                    PrintStream printStreamOut = (PrintStream) psOut.get();
+                    printStreamOut.println(message);
+                    printStreamOut.flush();
+                    s.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+
+    public void sendRequest(int id){
+        StringBuilder releaseMessage = new StringBuilder();
+        // "SERVER_CONNECTION;"
+        releaseMessage.append(Symbols.serverMessageHeader);
+        // "RELEASE;"
+        releaseMessage.append(Symbols.requestMessageTag);
+        // "<Server_Id>;"
+        releaseMessage.append(Integer.toString(myServer.myId)).append(";");
+        // "<Time_Stamp>;"
+        releaseMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
+        // "<RELEASEd_Process_Id>"
+        releaseMessage.append(Integer.toString(id));
+        Socket s = (Socket) otherServer.get();
+        try {
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        sendToAll(releaseMessage.toString());
+
+    }
 
 
 }
