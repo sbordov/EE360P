@@ -113,6 +113,15 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
     
     public String parcelRequest(int processId){
         String[] tokens = this.getInputTokens();
+        StringBuilder sb = new StringBuilder();
+        String prefix = "";
+        for(String token : tokens){
+            sb.append(prefix).append(token);
+            if(prefix.equals("")){
+                prefix = " ";
+            }
+        }
+        return sb.toString();
     }
 
 }
