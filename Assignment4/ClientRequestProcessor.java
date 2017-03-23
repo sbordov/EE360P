@@ -20,6 +20,15 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
     //TODO
     public void processInput(){
         String[] input = (String[]) inputTokens.get();
+        int serverId = myServer.myId;
+        int time = myServer.clock.sendAction();
+        int processId = myServer.getAndIncrementNextNewProcessId();
+        ServerUpdateRequest request = new ServerUpdateRequest(serverId, time,
+                processId, input);
+        myServer.insertToPendingQueue(request);
+        myServer.insertToMyProcesses(request);
+        Socket s = (Socket) otherServer.get();
+        myServer.insertToClients(processId, s);
     }
 
     @Override
@@ -97,7 +106,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         StringBuilder releaseMessage = new StringBuilder();
         // "SERVER_CONNECTION;"
         releaseMessage.append(Symbols.serverMessageHeader);
-        // "RELEASE;"
+        // "REQUEST"
         releaseMessage.append(Symbols.requestMessageTag);
         // "<Server_Id>;"
         releaseMessage.append(Integer.toString(myServer.myId)).append(";");

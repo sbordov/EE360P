@@ -20,6 +20,7 @@ public class Server {
     protected HashMap<Integer, Socket> clients;
     protected HashMap<Integer, ServerInfo> serverList;
     protected Inventory inventory;
+    protected int nextNewProcessId = 0;
     
     public Server(int id, int numServers){
         this.myId = id;
@@ -98,6 +99,18 @@ public class Server {
         this.pendingQ.offer(request);
     }
     
+    public synchronized void insertToClientList(int processId, Socket s){
+        this.clients.put(processId, s);
+    }
+    
+    public synchronized void insertToMyProcesses(ServerUpdateRequest request){
+        this.myProcesses.put(request.processId, request);
+    }
+    
+    public synchronized int getAndIncrementNextNewProcessId(){
+        return this.nextNewProcessId++;
+    }
+    
     
     public HashMap<Integer, ServerInfo> getServerList(){
         return this.serverList;
@@ -152,8 +165,10 @@ public class Server {
     
     // TODO: Make changes to inventory based on first ServerUpdateRequest in
     //      pendingQ, and remove ServerUpdateRequest from queue.
-    public synchronized String performTransaction(){
+    public synchronized void performTransaction(){
         ServerUpdateRequest request = pendingQ.peek();
+        boolean requestIsFromMyClient = request.serverId == this.myId;
+        int processId = request.processId;
         String[] tokens = request.processTokens;
         String response;
         // Send appropriate command to the server and display the
@@ -170,6 +185,18 @@ public class Server {
             response = "ERROR: No such command";
         }
         pendingQ.poll(); // Remove latest entry in pendingQ post-inventory update.
-        return response;
+        if(requestIsFromMyClient){
+            Socket client = this.clients.get(processId);
+            try {
+                PrintWriter pOut = new PrintWriter(client.getOutputStream());
+                pOut.print(response);
+                pOut.flush();
+                client.close();
+                clients.remove(processId);
+                myProcesses.remove(processId);
+            } catch (IOException ex) {
+                Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 }

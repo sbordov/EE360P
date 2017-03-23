@@ -62,27 +62,23 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         boolean enoughAcks = myServer.incrementNumAcks(id);
         boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
         if(enoughAcks && isSmallestProcessInQueue){
-            String response = myServer.performTransaction();
-            Socket client = myServer.clients.get(id);
-            try {
-                PrintWriter pOut = new PrintWriter(client.getOutputStream());
-                pOut.print(response);
-                pOut.flush();
-                client.close();
-                myServer.clients.remove(id);
-            } catch (IOException ex) {
-                Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            myServer.performTransaction();
             sendRelease(id);
         }
+        processNextTransactionIfSameServerId();
     }
     
     public void onReceiveRelease(String[] input){
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
+        // Don't need to send message to client.
         myServer.performTransaction();
+        processNextTransactionIfSameServerId();
+    }
+    
+     public void processNextTransactionIfSameServerId(){
         ServerUpdateRequest nextProcess;
-        int id;
+        int processId;
         boolean enoughAcks = false;
         boolean isSmallestProcessInQueue = false;
         do{
@@ -90,14 +86,14 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
             if(nextProcess == null){
                 return;
             }
-            id = nextProcess.processId;
+            processId = nextProcess.processId;
             enoughAcks = myServer.checkNumAcks(nextProcess.processId);
             isSmallestProcessInQueue =
                     myServer.isProcessAtFrontOfQueue(nextProcess.processId);
             if(enoughAcks && isSmallestProcessInQueue){
                 // Don't need to send message to client.
                 myServer.performTransaction();
-                sendRelease(id);
+                sendRelease(processId);
             }
         } while(enoughAcks && isSmallestProcessInQueue);
     }
