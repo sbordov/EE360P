@@ -18,6 +18,7 @@ public class Server {
     protected HashMap<Integer, ServerUpdateRequest> myProcesses;
     // A list of clients with key = processId. Specific to each server.
     protected HashMap<Integer, Socket> clients;
+    protected HashMap<Integer, ClientAssuranceThread> clientAssuranceThreads;
     protected HashMap<Integer, ServerInfo> serverList;
     protected Inventory inventory;
     protected int nextNewProcessId = 0;
@@ -28,6 +29,7 @@ public class Server {
         this.clock = new LamportClock();
         this.pendingQ = new PriorityQueue<>(Symbols.INITIAL_QUEUE_CAPACITY, new ServerUpdateRequestComparator());
         this.clients = new HashMap<>();
+        this.clientAssuranceThreads = new HashMap<>();
         this.serverList = new HashMap<>();
         this.inventory = new Inventory();
         
@@ -99,8 +101,9 @@ public class Server {
         this.pendingQ.offer(request);
     }
     
-    public synchronized void insertToClientList(int processId, Socket s){
+    public synchronized void insertToClients(int processId, Socket s){
         this.clients.put(processId, s);
+        this.clientAssuranceThreads.put(processId, new ClientAssuranceThread(s));
     }
     
     public synchronized void insertToMyProcesses(ServerUpdateRequest request){
@@ -192,11 +195,15 @@ public class Server {
                 pOut.print(response);
                 pOut.flush();
                 client.close();
+                pOut.close();
                 clients.remove(processId);
+                clientAssuranceThreads.get(processId).interrupt();
+                clientAssuranceThreads.remove(processId);
                 myProcesses.remove(processId);
             } catch (IOException ex) {
                 Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
+    
 }
