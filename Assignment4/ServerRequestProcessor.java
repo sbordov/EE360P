@@ -40,6 +40,7 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
         int id = Integer.parseInt(input[4]);
+        System.out.println(input);
         String[] reqTokens = input[5].split("\\s");
         ServerUpdateRequest request = new ServerUpdateRequest(serverId, time, id, reqTokens);
         myServer.insertToPendingQueue(request);
@@ -50,6 +51,7 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
         // Don't need to send message to client.
+        System.out.println("Performing transaction.");
         myServer.performTransaction();
         processNextTransactionIfSameServerId();
     }

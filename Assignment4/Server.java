@@ -85,17 +85,13 @@ public class Server {
         try {
             Scanner sc = new Scanner(s.getInputStream());
             String command = sc.nextLine();
-            System.out.println(command);
             while(command.equals(Symbols.assuranceMessage) && sc.hasNextLine()){
                 command = sc.nextLine();
             }
             if(command.equals(Symbols.assuranceMessage)){
-                System.out.println("Potential server crash.");
                 return;
             }
             String[] tokens = command.split(";");
-            System.out.println(tokens[0]);
-            System.out.println(Symbols.clientMessageHeader);
             Runnable requestProcessor = null;
             
             if(tokens[0].equals(Symbols.serverMessageHeader)){
@@ -199,7 +195,6 @@ public class Server {
     // TODO: Make changes to inventory based on first ServerUpdateRequest in
     //      pendingQ, and remove ServerUpdateRequest from queue.
     public synchronized void performTransaction(){
-        System.out.println("Server " + this.myId + " is performing transaction.");
         ServerUpdateRequest request = pendingQ.peek();
         boolean requestIsFromMyClient = request.serverId == this.myId;
         int processId = request.processId;
@@ -223,7 +218,6 @@ public class Server {
             Socket client = this.clients.get(processId);
             try {
                 PrintWriter pOut = new PrintWriter(client.getOutputStream());
-                System.out.println(response);
                 pOut.print(response);
                 pOut.flush();
                 client.close();
