@@ -17,17 +17,11 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
     private static PriorityQueue<ClientRequest> pendingQ = new PriorityQueue<>();
     private Inventory inventory;
     */
-    private ThreadLocal<Integer> numAcks = new ThreadLocal<>();
-    private ThreadLocal<Integer> hisTs = new ThreadLocal<>();
-    private ThreadLocal<Integer> hisId = new ThreadLocal<>();
-    private ThreadLocal<MessageType> messageType = new ThreadLocal<>();
 
     
     public ServerRequestProcessor(Socket s, String[] input,
             Server server) {
         super(s, input, server);
-        numAcks.set(0);
-        
     }
     
     public void processInput(){
@@ -66,23 +60,19 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         StringBuilder ackMessage = new StringBuilder();
         // "SERVER_CONNECTION;"
         ackMessage.append(Symbols.serverMessageHeader);
+        ackMessage.append(Symbols.messageDelimiter);
         // "ACK;"
         ackMessage.append(Symbols.ackMessageTag);
+        ackMessage.append(Symbols.messageDelimiter);
         // "<Server_Id>;"
-        ackMessage.append(Integer.toString(myServer.myId)).append(";");
+        ackMessage.append(Integer.toString(myServer.myId));
+        ackMessage.append(Symbols.messageDelimiter);
         // "<Time_Stamp>;"
-        ackMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
+        ackMessage.append(Integer.toString(myServer.clock.sendAction()));
+        ackMessage.append(Symbols.messageDelimiter);
         // "<ACKed_Process_Id>"
         ackMessage.append(Integer.toString(id));
         send(ackMessage.toString());
     }
     
-    @Override
-    protected void destroyThreadLocals(){
-        super.destroyThreadLocals();
-        numAcks.remove();
-        hisTs.remove();
-        hisId.remove();
-        messageType.remove();
-    }
 }

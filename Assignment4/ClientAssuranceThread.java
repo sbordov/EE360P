@@ -21,6 +21,7 @@ public class ClientAssuranceThread extends Thread{
     protected ThreadLocal<PrintWriter> pOut;
     
     public ClientAssuranceThread(Socket client){
+        pOut = new ThreadLocal<>();
         try {
             pOut.set(new PrintWriter(client.getOutputStream()));
         } catch (IOException ex) {

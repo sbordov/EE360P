@@ -29,6 +29,7 @@ public class Server {
         this.numFunctioningServers = numServers;
         this.clock = new LamportClock();
         this.pendingQ = new PriorityQueue<>(Symbols.INITIAL_QUEUE_CAPACITY, new ServerUpdateRequestComparator());
+        this.myProcesses = new HashMap<>();
         this.clients = new HashMap<>();
         this.clientAssuranceThreads = new HashMap<>();
         this.serverList = new HashMap<>();
@@ -71,7 +72,9 @@ public class Server {
                 // TODO: handle request from client
                 Socket s;
                 while ( (s = listener.accept()) != null) {
+                    System.out.println("Found a friend");
                     s.setSoTimeout(Symbols.TIMEOUT_DURATION);
+                    System.out.println("Friend didn't want to shake hands");
                     processRequest(s);
                 }
             } catch (IOException ex) {
@@ -81,10 +84,14 @@ public class Server {
     }
   
     public void processRequest(Socket s){
+        System.out.println("Processing request.");
         try {
+            System.out.println("Processing request.");
             Scanner sc = new Scanner(s.getInputStream());
+            System.out.println("Made scanner.");
             String command = sc.nextLine();
-            while(sc.nextLine().equals(Symbols.assuranceMessage) && sc.hasNextLine()){
+            System.out.println(command);
+            while(command.equals(Symbols.assuranceMessage) && sc.hasNextLine()){
                 command = sc.nextLine();
             }
             if(command.equals(Symbols.assuranceMessage)){
@@ -92,10 +99,15 @@ public class Server {
                 return;
             }
             String[] tokens = command.split(";");
+            System.out.println(tokens[0]);
+            System.out.println(Symbols.clientMessageHeader);
             Runnable requestProcessor = null;
+            
             if(tokens[0].equals(Symbols.serverMessageHeader)){
+                System.out.println("Spinning off server request processor.");
                 requestProcessor = new ServerRequestProcessor(s, tokens, this);
             } else if(tokens[0].equals(Symbols.clientMessageHeader)){
+                System.out.println("Spinning off client request processor.");
                 requestProcessor = new ClientRequestProcessor(s, tokens, this);
             }
             if(requestProcessor != null){
@@ -105,6 +117,7 @@ public class Server {
         } catch(java.net.SocketTimeoutException e){
             
         } catch (IOException e) {
+            System.out.println("Processing request failed.");
             System.err.println(e);
         }
     }

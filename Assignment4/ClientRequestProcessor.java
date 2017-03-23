@@ -82,12 +82,16 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         StringBuilder requestMessage = new StringBuilder();
         // "SERVER_CONNECTION;"
         requestMessage.append(Symbols.serverMessageHeader);
+        requestMessage.append(Symbols.messageDelimiter);
         // "REQUEST"
         requestMessage.append(Symbols.requestMessageTag);
+        requestMessage.append(Symbols.messageDelimiter);
         // "<Server_Id>;"
-        requestMessage.append(Integer.toString(myServer.myId)).append(";");
+        requestMessage.append(Integer.toString(myServer.myId));
+        requestMessage.append(Symbols.messageDelimiter);
         // "<Time_Stamp>;"
-        requestMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
+        requestMessage.append(Integer.toString(myServer.clock.sendAction()));
+        requestMessage.append(Symbols.messageDelimiter);
         // "<RELEASEd_Process_Id>"
         requestMessage.append(Integer.toString(id));
         Socket s = (Socket) otherServer.get();
@@ -100,12 +104,6 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         sendRequestToAll(requestMessage.toString());
 
     }
-    
-    @Override
-    protected void destroyThreadLocals(){
-        super.destroyThreadLocals();
-    }
-
 
 }
 

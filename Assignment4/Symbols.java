@@ -5,11 +5,12 @@
 
 public class Symbols {
     //public static final String nameServer = "localhost"; // Web address for server.
-    public static final String serverMessageHeader = "SERVER_CONNECTION;";
-    public static final String clientMessageHeader = "CLIENT_CONNECTION;";
-    public static final String requestMessageTag = "REQUEST;";
-    public static final String ackMessageTag = "ACK;";
-    public static final String releaseMessageTag = "RELEASE;";
+    public static final String serverMessageHeader = "SERVER_CONNECTION";
+    public static final String clientMessageHeader = "CLIENT_CONNECTION";
+    public static final String messageDelimiter = ";";
+    public static final String requestMessageTag = "REQUEST";
+    public static final String ackMessageTag = "ACK";
+    public static final String releaseMessageTag = "RELEASE";
     public static final String assuranceMessage = "Still processing...";
     public static final int TIMEOUT_DURATION = 100; // 100ms
     public static final int INITIAL_QUEUE_CAPACITY = 50;

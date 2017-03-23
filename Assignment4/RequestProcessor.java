@@ -33,6 +33,12 @@ public abstract class RequestProcessor implements Runnable{
     
     public RequestProcessor(Socket s, String[] input,
             Server server) {
+        otherServer = new ThreadLocal<>();
+        pout = new ThreadLocal<>();
+        psOut  = new ThreadLocal<>();
+        din = new ThreadLocal<>();
+        inputTokens = new ThreadLocal<>();
+        requestTokens = new ThreadLocal<>();
         otherServer.set(s);
         try {
             pout.set(new PrintWriter(s.getOutputStream()));
@@ -100,12 +106,16 @@ public abstract class RequestProcessor implements Runnable{
         StringBuilder releaseMessage = new StringBuilder();
         // "SERVER_CONNECTION;"
         releaseMessage.append(Symbols.serverMessageHeader);
+        releaseMessage.append(Symbols.messageDelimiter);
         // "RELEASE;"
         releaseMessage.append(Symbols.releaseMessageTag);
+        releaseMessage.append(Symbols.messageDelimiter);
         // "<Server_Id>;"
-        releaseMessage.append(Integer.toString(myServer.myId)).append(";");
+        releaseMessage.append(Integer.toString(myServer.myId));
+        releaseMessage.append(Symbols.messageDelimiter);
         // "<Time_Stamp>;"
-        releaseMessage.append(Integer.toString(myServer.clock.sendAction())).append(";");
+        releaseMessage.append(Integer.toString(myServer.clock.sendAction()));
+        releaseMessage.append(Symbols.messageDelimiter);
         // "<RELEASEd_Process_Id>"
         releaseMessage.append(Integer.toString(id));
         Socket s = (Socket) otherServer.get();
