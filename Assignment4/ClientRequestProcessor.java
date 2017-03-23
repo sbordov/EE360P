@@ -21,6 +21,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
     public void processInput(){
         String[] input = this.getInputTokens();
         String[] tokens = input[1].split("\\s");
+        this.setRequestTokens(tokens);
         int serverId = myServer.myId;
         int time = myServer.clock.sendAction();
         int processId = myServer.getAndIncrementNextNewProcessId();
@@ -30,7 +31,6 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         myServer.insertToMyProcesses(request);
         Socket s = this.getOtherServer();
         if(s == null){
-            System.out.println("Damn");
         }
         myServer.insertToClients(processId, s);
         sendRequest(processId);
@@ -57,7 +57,6 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
                     if(ex instanceof java.net.SocketTimeoutException){
                         myServer.addBrokenServerToList(serverId);
                     } else{
-                        System.out.println("Not exactly what I wanted");
                         Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
@@ -107,7 +106,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
     }
     
     public String parcelRequest(int processId){
-        String[] tokens = this.getInputTokens();
+        String[] tokens = this.getRequestTokens();
         StringBuilder sb = new StringBuilder();
         String prefix = "";
         for(String token : tokens){
