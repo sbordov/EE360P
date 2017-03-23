@@ -103,9 +103,10 @@ public class Client {
             }
             System.out.println("Passed blocking read");
             System.out.println(sb.toString());
-            pout.close();
-            din.close();
-            server.close();
+            //pout.close();
+            //din.close();
+            //server.close();
+            System.out.println("Closing socket.");
             return sb.toString();
         } catch(java.net.SocketTimeoutException e){
             if(serverIndex < numServers){

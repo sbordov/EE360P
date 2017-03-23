@@ -18,12 +18,68 @@ import java.util.logging.Logger;
  * @author Stefan
  */
 public abstract class RequestProcessor implements Runnable{
-    protected ThreadLocal<Socket> otherServer;
-    protected ThreadLocal<PrintWriter> pout;
-    protected ThreadLocal<PrintStream> psOut;
-    protected ThreadLocal<Scanner> din;
-    protected ThreadLocal<String[]> inputTokens;
-    protected ThreadLocal<String[]> requestTokens;
+    protected Socket otherServer;
+
+    public Socket getOtherServer() {
+        return otherServer;
+    }
+
+    public void setOtherServer(Socket otherServer) {
+        this.otherServer = otherServer;
+    }
+
+    public PrintWriter getPout() {
+        return pout;
+    }
+
+    public void setPout(PrintWriter pout) {
+        this.pout = pout;
+    }
+
+    public PrintStream getPsOut() {
+        return psOut;
+    }
+
+    public void setPsOut(PrintStream psOut) {
+        this.psOut = psOut;
+    }
+
+    public Scanner getDin() {
+        return din;
+    }
+
+    public void setDin(Scanner din) {
+        this.din = din;
+    }
+
+    public String[] getInputTokens() {
+        return inputTokens;
+    }
+
+    public void setInputTokens(String[] inputTokens) {
+        this.inputTokens = inputTokens;
+    }
+
+    public String[] getRequestTokens() {
+        return requestTokens;
+    }
+
+    public void setRequestTokens(String[] requestTokens) {
+        this.requestTokens = requestTokens;
+    }
+
+    public Server getMyServer() {
+        return myServer;
+    }
+
+    public void setMyServer(Server myServer) {
+        this.myServer = myServer;
+    }
+    protected PrintWriter pout;
+    protected PrintStream psOut;
+    protected Scanner din;
+    protected String[] inputTokens;
+    protected String[] requestTokens;
     protected Server myServer;
     
     protected enum MessageType{
@@ -33,20 +89,14 @@ public abstract class RequestProcessor implements Runnable{
     
     public RequestProcessor(Socket s, String[] input,
             Server server) {
-        otherServer = new ThreadLocal<>();
-        pout = new ThreadLocal<>();
-        psOut  = new ThreadLocal<>();
-        din = new ThreadLocal<>();
-        inputTokens = new ThreadLocal<>();
-        requestTokens = new ThreadLocal<>();
-        otherServer.set(s);
+        this.setOtherServer(s);
         try {
-            pout.set(new PrintWriter(s.getOutputStream()));
+            this.setPout(new PrintWriter(s.getOutputStream()));
         } catch (IOException ex) {
             Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
         }
-        inputTokens.set(input);
-        myServer = server;
+        this.setInputTokens(input);
+        this.setMyServer(server);
         /*
         clock = c;
         pendingQ = q;
@@ -58,6 +108,10 @@ public abstract class RequestProcessor implements Runnable{
     
     @Override
     public void run(){
+        Socket s = this.getOtherServer();
+        if(s == null){
+            System.out.println("Null here.");
+        }
         processInput();
     }
     
@@ -66,16 +120,16 @@ public abstract class RequestProcessor implements Runnable{
      */
     public Socket getSocket(ServerInfo info) throws IOException {
         Socket socket = new Socket(info.getIpAddress(), info.getPortNumber());
-        din.set(new Scanner(socket.getInputStream()));
-        psOut.set(new PrintStream(socket.getOutputStream()));
+        this.setDin(new Scanner(socket.getInputStream()));
+        this.setPsOut(new PrintStream(socket.getOutputStream()));
         return socket;
         //otherServer.set(server);
     }
     
      public void send(String message){
         try {
-            Socket s = (Socket) otherServer.get();
-            PrintWriter pOut = (PrintWriter) pout.get();
+            Socket s = this.getOtherServer();
+            PrintWriter pOut = this.getPout();
             pOut.print(message);
             pOut.flush();
             s.close();
@@ -89,7 +143,7 @@ public abstract class RequestProcessor implements Runnable{
             if(serverId != myServer.myId){
                 try {
                     Socket s = getSocket(myServer.serverList.get(serverId));
-                    PrintStream printStreamOut = (PrintStream) psOut.get();
+                    PrintStream printStreamOut = (PrintStream) this.getPsOut();
                     printStreamOut.println(message);
                     printStreamOut.flush();
                     s.close();
@@ -118,7 +172,7 @@ public abstract class RequestProcessor implements Runnable{
         releaseMessage.append(Symbols.messageDelimiter);
         // "<RELEASEd_Process_Id>"
         releaseMessage.append(Integer.toString(id));
-        Socket s = (Socket) otherServer.get();
+        Socket s = this.getOtherServer();
         try {
             s.close();
         } catch (IOException ex) {
@@ -151,6 +205,7 @@ public abstract class RequestProcessor implements Runnable{
         } while(enoughAcks && isSmallestProcessInQueue);
     }
     
+    /*
     protected void destroyThreadLocals(){
         otherServer.remove();
         pout.remove();
@@ -159,4 +214,5 @@ public abstract class RequestProcessor implements Runnable{
         inputTokens.remove();
         requestTokens.remove();
     }
+    */
 }

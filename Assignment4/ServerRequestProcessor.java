@@ -25,7 +25,7 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
     }
     
     public void processInput(){
-        String[] input = (String[]) inputTokens.get();
+        String[] input = this.getInputTokens();
         if(input[1].equals("REQUEST")){
             onReceiveRequest(input);
         } else if(input[1].equals("RELEASE")){

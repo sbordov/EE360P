@@ -19,7 +19,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
 
     //TODO
     public void processInput(){
-        String[] input = (String[]) inputTokens.get();
+        String[] input = this.getInputTokens();
         int serverId = myServer.myId;
         int time = myServer.clock.sendAction();
         int processId = myServer.getAndIncrementNextNewProcessId();
@@ -27,7 +27,10 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
                 processId, input);
         myServer.insertToPendingQueue(request);
         myServer.insertToMyProcesses(request);
-        Socket s = (Socket) otherServer.get();
+        Socket s = this.getOtherServer();
+        if(s == null){
+            System.out.println("Damn");
+        }
         myServer.insertToClients(processId, s);
         sendRequest(processId);
     }
@@ -38,11 +41,11 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
                 try {
                     Socket s = getSocket(myServer.serverList.get(serverId));
                     s.setSoTimeout(Symbols.TIMEOUT_DURATION);
-                    PrintStream printStreamOut = (PrintStream) psOut.get();
+                    PrintStream printStreamOut = this.getPsOut();
                     printStreamOut.println(message);
                     printStreamOut.flush();
                     String response;
-                    Scanner dataIn = (Scanner) din.get();
+                    Scanner dataIn = this.getDin();
                     // Read response from ServerSocket.
                     while(dataIn.hasNextLine()){
                         response = dataIn.nextLine();
@@ -92,9 +95,12 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         // "<Time_Stamp>;"
         requestMessage.append(Integer.toString(myServer.clock.sendAction()));
         requestMessage.append(Symbols.messageDelimiter);
-        // "<RELEASEd_Process_Id>"
+        // "<RELEASEd_Process_Id>;"
         requestMessage.append(Integer.toString(id));
-        Socket s = (Socket) otherServer.get();
+        requestMessage.append(Symbols.messageDelimiter);
+        // "<Requested process>"
+        requestMessage.append(parcelRequest(id));
+        Socket s = this.getOtherServer();
         try {
             s.close();
         } catch (IOException ex) {
@@ -103,6 +109,10 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
 
         sendRequestToAll(requestMessage.toString());
 
+    }
+    
+    public String parcelRequest(int processId){
+        String[] tokens = this.getInputTokens();
     }
 
 }
