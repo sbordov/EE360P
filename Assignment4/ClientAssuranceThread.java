@@ -18,20 +18,20 @@ import java.util.logging.Logger;
  * @author Stefan
  */
 public class ClientAssuranceThread extends Thread{
-    protected ThreadLocal<PrintWriter> pOut;
+    PrintWriter pOut;
     
     public ClientAssuranceThread(Socket client){
-        pOut = new ThreadLocal<>();
         try {
-            pOut.set(new PrintWriter(client.getOutputStream()));
-        } catch (IOException ex) {
-            Logger.getLogger(ClientAssuranceThread.class.getName()).log(Level.SEVERE, null, ex);
+            pOut = new PrintWriter(client.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
     }
     
     @Override
     public void run(){
-        PrintWriter pout = (PrintWriter) pOut.get();
+        PrintWriter pout =  pOut;
         try{
             this.sleep(50);
             pout.print(Symbols.assuranceMessage);

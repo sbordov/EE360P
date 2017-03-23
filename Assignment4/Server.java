@@ -120,7 +120,10 @@ public class Server {
     
     public synchronized void insertToClients(int processId, Socket s){
         this.clients.put(processId, s);
-        this.clientAssuranceThreads.put(processId, new ClientAssuranceThread(s));
+        ClientAssuranceThread cat = new ClientAssuranceThread((s));
+        cat.start();
+        this.clientAssuranceThreads.put(processId, cat);
+
     }
     
     public synchronized void insertToMyProcesses(ServerUpdateRequest request){
