@@ -16,6 +16,8 @@ public class Server {
     protected LamportClock clock;
     protected PriorityQueue<ServerUpdateRequest> pendingQ;
     protected HashMap<Integer, ServerUpdateRequest> myProcesses;
+    // A list of clients with key = processId. Specific to each server.
+    protected HashMap<Integer, Socket> clients;
     protected HashMap<Integer, ServerInfo> serverList;
     protected Inventory inventory;
     
@@ -24,6 +26,7 @@ public class Server {
         this.numFunctioningServers = numServers;
         this.clock = new LamportClock();
         this.pendingQ = new PriorityQueue<>(Symbols.INITIAL_QUEUE_CAPACITY, new ServerUpdateRequestComparator());
+        this.clients = new HashMap<>();
         this.serverList = new HashMap<>();
         this.inventory = new Inventory();
         
@@ -149,7 +152,24 @@ public class Server {
     
     // TODO: Make changes to inventory based on first ServerUpdateRequest in
     //      pendingQ, and remove ServerUpdateRequest from queue.
-    public synchronized void processTransaction(){
-        
+    public synchronized String performTransaction(){
+        ServerUpdateRequest request = pendingQ.peek();
+        String[] tokens = request.processTokens;
+        String response;
+        // Send appropriate command to the server and display the
+            // appropriate responses from the server
+        if (tokens[0].equals("purchase")) {
+            response = inventory.processPurchase(tokens);
+        } else if (tokens[0].equals("cancel")) {
+            response = inventory.processCancel(tokens);
+        } else if (tokens[0].equals("search")) {
+            response = inventory.processSearch(tokens);
+        } else if (tokens[0].equals("list")) {
+            response = inventory.processList(tokens);
+        } else {
+            response = "ERROR: No such command";
+        }
+        pendingQ.poll(); // Remove latest entry in pendingQ post-inventory update.
+        return response;
     }
 }

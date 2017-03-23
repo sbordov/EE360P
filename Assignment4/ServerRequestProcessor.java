@@ -43,19 +43,6 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         }
     }
     
-    public void onReceiveAck(String[] input){
-        int serverId = Integer.parseInt(input[2]);
-        int time = Integer.parseInt(input[3]);
-        myServer.clock.receiveAction(time);
-        int id = Integer.parseInt(input[4]);
-        boolean enoughAcks = myServer.incrementNumAcks(id);
-        boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
-        if(enoughAcks && isSmallestProcessInQueue){
-            myServer.performTransaction();
-            sendRelease(id);
-        }
-    }
-    
     public void onReceiveRequest(String[] input){
         int serverId = Integer.parseInt(input[2]);
         int time = Integer.parseInt(input[3]);
@@ -67,23 +54,52 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         sendAck(id);
     }
     
-    public void onReceiveRelease(String[] input){
+    public void onReceiveAck(String[] input){
         int serverId = Integer.parseInt(input[2]);
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
-        myServer.performTransaction();
-        ServerUpdateRequest nextProcess = myServer.pendingQ.peek();
-        if(nextProcess == null){
-            return;
-        }
-        int id = nextProcess.processId;
-        boolean enoughAcks = myServer.checkNumAcks(nextProcess.processId);
-        boolean isSmallestProcessInQueue =
-                myServer.isProcessAtFrontOfQueue(nextProcess.processId);
+        int id = Integer.parseInt(input[4]);
+        boolean enoughAcks = myServer.incrementNumAcks(id);
+        boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
         if(enoughAcks && isSmallestProcessInQueue){
-            myServer.performTransaction();
+            String response = myServer.performTransaction();
+            Socket client = myServer.clients.get(id);
+            try {
+                PrintWriter pOut = new PrintWriter(client.getOutputStream());
+                pOut.print(response);
+                pOut.flush();
+                client.close();
+                myServer.clients.remove(id);
+            } catch (IOException ex) {
+                Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+            }
             sendRelease(id);
         }
+    }
+    
+    public void onReceiveRelease(String[] input){
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+        myServer.performTransaction();
+        ServerUpdateRequest nextProcess;
+        int id;
+        boolean enoughAcks = false;
+        boolean isSmallestProcessInQueue = false;
+        do{
+            nextProcess = myServer.pendingQ.peek();
+            if(nextProcess == null){
+                return;
+            }
+            id = nextProcess.processId;
+            enoughAcks = myServer.checkNumAcks(nextProcess.processId);
+            isSmallestProcessInQueue =
+                    myServer.isProcessAtFrontOfQueue(nextProcess.processId);
+            if(enoughAcks && isSmallestProcessInQueue){
+                // Don't need to send message to client.
+                myServer.performTransaction();
+                sendRelease(id);
+            }
+        } while(enoughAcks && isSmallestProcessInQueue);
     }
     
     // ACK Message has the following format:
