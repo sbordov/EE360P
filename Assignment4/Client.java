@@ -40,6 +40,7 @@ public class Client {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
             String response;
+            System.out.println("Sending request");
 
             if (tokens[0].equals("purchase") || tokens[0].equals("cancel") ||
                     tokens[0].equals("search") || tokens[0].equals("list")) {
@@ -80,22 +81,18 @@ public class Client {
             message.append(Symbols.messageDelimiter);
             message.append(command);
             getSocket();
-            System.out.println("Processing command");
             if(server == null){
                 throw new NullPointerException("Server connection is null.");
             }
             // Write command to server.
             pout.println(message.toString());
             pout.flush();
-            System.out.println("Flushed command");
             StringBuilder sb = new StringBuilder("");
             String response;
             String prefix = "";
             // Read response from ServerSocket.
-            System.out.println("Blocking read");
             while(din.hasNextLine()){
                 response = din.nextLine();
-                System.out.println(response);
                 if(!response.equals(Symbols.assuranceMessage)){
                     sb.append(prefix).append(response);
                     if(prefix.equals("")){
@@ -103,8 +100,6 @@ public class Client {
                     }
                 }
             }
-            System.out.println("Passed blocking read");
-            System.out.println(sb.toString());
             //pout.close();
             //din.close();
             //server.close();
