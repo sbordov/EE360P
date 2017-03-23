@@ -72,9 +72,7 @@ public class Server {
                 // TODO: handle request from client
                 Socket s;
                 while ( (s = listener.accept()) != null) {
-                    System.out.println("Found a friend");
                     s.setSoTimeout(Symbols.TIMEOUT_DURATION);
-                    System.out.println("Friend didn't want to shake hands");
                     processRequest(s);
                 }
             } catch (IOException ex) {
@@ -84,11 +82,8 @@ public class Server {
     }
   
     public void processRequest(Socket s){
-        System.out.println("Processing request.");
         try {
-            System.out.println("Processing request.");
             Scanner sc = new Scanner(s.getInputStream());
-            System.out.println("Made scanner.");
             String command = sc.nextLine();
             System.out.println(command);
             while(command.equals(Symbols.assuranceMessage) && sc.hasNextLine()){
@@ -104,10 +99,8 @@ public class Server {
             Runnable requestProcessor = null;
             
             if(tokens[0].equals(Symbols.serverMessageHeader)){
-                System.out.println("Spinning off server request processor.");
                 requestProcessor = new ServerRequestProcessor(s, tokens, this);
             } else if(tokens[0].equals(Symbols.clientMessageHeader)){
-                System.out.println("Spinning off client request processor.");
                 requestProcessor = new ClientRequestProcessor(s, tokens, this);
             }
             if(requestProcessor != null){
@@ -117,7 +110,6 @@ public class Server {
         } catch(java.net.SocketTimeoutException e){
             
         } catch (IOException e) {
-            System.out.println("Processing request failed.");
             System.err.println(e);
         }
     }
@@ -207,6 +199,7 @@ public class Server {
     // TODO: Make changes to inventory based on first ServerUpdateRequest in
     //      pendingQ, and remove ServerUpdateRequest from queue.
     public synchronized void performTransaction(){
+        System.out.println("Server " + this.myId + " is performing transaction.");
         ServerUpdateRequest request = pendingQ.peek();
         boolean requestIsFromMyClient = request.serverId == this.myId;
         int processId = request.processId;
@@ -230,6 +223,7 @@ public class Server {
             Socket client = this.clients.get(processId);
             try {
                 PrintWriter pOut = new PrintWriter(client.getOutputStream());
+                System.out.println(response);
                 pOut.print(response);
                 pOut.flush();
                 client.close();
