@@ -83,6 +83,8 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
         int id = Integer.parseInt(input[4]);
+        Thread bomb = myServer.processTimebombs.get(id).get(serverId);
+        bomb.interrupt();
         boolean enoughAcks = myServer.incrementNumAcks(id);
         boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
         if(enoughAcks && isSmallestProcessInQueue){

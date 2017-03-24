@@ -21,6 +21,7 @@ public class Server {
     protected HashMap<Integer, ClientAssuranceThread> clientAssuranceThreads;
     protected HashMap<Integer, ServerInfo> serverList;
     protected HashMap<Integer, Integer> brokenServerIds;
+    protected HashMap<Integer, HashMap<Integer, Thread>> processTimebombs;
     protected Inventory inventory;
     protected int nextNewProcessId = 0;
     
@@ -33,6 +34,7 @@ public class Server {
         this.clients = new HashMap<>();
         this.clientAssuranceThreads = new HashMap<>();
         this.serverList = new HashMap<>();
+        this.processTimebombs = new HashMap<>();
         this.brokenServerIds = new HashMap<>();
         this.inventory = new Inventory();
         
@@ -152,7 +154,24 @@ public class Server {
     public synchronized void addBrokenServerToList(int id){
         if(!brokenServerIds.containsKey(id)){
             brokenServerIds.put(id, id);
+            serverList.remove(id);
             numFunctioningServers--;
+        }
+    }
+    
+    public synchronized void removeBrokenServerProcesses(int serverId){
+        for(ServerUpdateRequest request : pendingQ){
+            if(request.serverId == serverId){
+                pendingQ.remove(request);
+            }
+        }
+    }
+    
+    public synchronized void notifyNextThreadInQueue(int processId){
+        ServerUpdateRequest request = pendingQ.peek();
+        if((request.processId == processId) && (request.serverId == this.myId)){
+            this.performTransaction();
+            this.pendingQ.poll();
         }
     }
     

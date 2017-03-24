@@ -33,16 +33,21 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         if(s == null){
         }
         myServer.insertToClients(processId, s);
+        myServer.processTimebombs.put(processId, new HashMap<Integer, Thread>());
         sendRequest(processId);
     }
 
-    public synchronized void sendRequestToAll(String message){
+    public synchronized void sendRequestToAll(String message, int processId){
+        
         for(Integer serverId : myServer.serverList.keySet()){
             if(serverId != myServer.myId){
                 try {
                     Socket s = getSocket(myServer.serverList.get(serverId));
                     //s.setSoTimeout(Symbols.TIMEOUT_DURATION);
                     PrintStream printStreamOut = this.getPsOut();
+                    Thread bomb = new Thread(new ServerTimeoutThread(processId, myServer.myId));
+                    bomb.start();
+                    myServer.processTimebombs.get(processId).put(serverId, bomb);
                     printStreamOut.println(message);
                     printStreamOut.flush();
                     /*
@@ -89,7 +94,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         // "<Requested process>"
         requestMessage.append(parcelRequest(id));
 
-        sendRequestToAll(requestMessage.toString());
+        sendRequestToAll(requestMessage.toString(), id);
 
     }
     
