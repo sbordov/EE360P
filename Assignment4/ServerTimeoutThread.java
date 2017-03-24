@@ -27,11 +27,12 @@ public class ServerTimeoutThread implements Runnable{
         try {
             Thread.sleep(100);
             myServer.addBrokenServerToList(myServerId);
+            myServer.removeServerFromList(myServerId);
             myServer.removeBrokenServerProcesses(myServerId);
             myServer.notifyNextThreadInQueue(myProcessId);
         } catch (InterruptedException ex) {
-            Logger.getLogger(ServerTimeoutThread.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
     }
     
 }

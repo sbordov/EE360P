@@ -63,6 +63,8 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
                 } catch (IOException ex) {
                     if(ex instanceof java.net.SocketTimeoutException){
                         myServer.addBrokenServerToList(serverId);
+                    } else if(ex instanceof java.net.ConnectException){
+                        myServer.addBrokenServerToList(serverId);
                     } else{
                         Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -71,6 +73,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         }
         for(int id: myServer.brokenServerIds.keySet()){
             myServer.removeServerFromList(id);
+            myServer.removeBrokenServerProcesses(id);
         }
     }
 

@@ -23,7 +23,7 @@ public class Client {
     
     public Client(int num){
         numServers = num;
-        serverIndex = 0;
+        serverIndex = 1;
         serverList = new ArrayList<>();
     }
     
@@ -45,12 +45,12 @@ public class Client {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
             String response;
-            System.out.println("Sending request");
 
             if (tokens[0].equals("purchase") || tokens[0].equals("cancel") ||
                     tokens[0].equals("search") || tokens[0].equals("list")) {
                 response = client.processCommand(cmd, tokens); // Send command to server and process response.
-                System.out.println(response);
+                if(!response.equals(""))
+                    System.out.println(response);
             } else {
                 System.out.println("ERROR: No such command");
             }
@@ -88,7 +88,6 @@ public class Client {
             message.append(command);
             getSocket();
             if(server == null){
-                throw new NullPointerException("Server connection is null.");
             }
             // Write command to server.
             pout.println(message.toString());
@@ -109,12 +108,9 @@ public class Client {
             //pout.close();
             //din.close();
             //server.close();
-            System.out.println("Closing socket.");
             return sb.toString();
         } catch (IOException ex) {
-            System.out.println("Server Crash");
             if(serverIndex < numServers - 1){
-                System.out.println("We saw the server crash");
                 serverIndex++;
                 try {
                     getSocket();
@@ -123,9 +119,8 @@ public class Client {
                 }
                 processCommand(command, input);
             } else{
-                System.out.println("Out of functioning servers.");
             }
         } 
-        return "ERROR: Nothing happened.";
+        return "";
     }
 }
