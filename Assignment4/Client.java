@@ -1,5 +1,8 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -12,7 +15,8 @@ public class Client {
     
     private int serverIndex;
     private int numServers;
-    private Scanner din;
+    //private Scanner din
+    private BufferedReader din;
     private PrintStream pout;
     private Socket server;
     protected ArrayList<ServerInfo> serverList;
@@ -62,12 +66,13 @@ public class Client {
      */
     public void getSocket() throws IOException {
         if(!serverList.isEmpty()){
-            ServerInfo myServer = serverList.get(0);
+            ServerInfo myServer = serverList.get(serverIndex);
             String hostAddress = myServer.getIpAddress();
             int port = myServer.getPortNumber();
             server = new Socket();
             server.connect(new InetSocketAddress(hostAddress, port), 100);
-            din = new Scanner(server.getInputStream());
+            Reader reader = new InputStreamReader(server.getInputStream());
+            din = new BufferedReader(reader);
             pout = new PrintStream(server.getOutputStream());
         }
     }
@@ -92,29 +97,34 @@ public class Client {
             String response;
             String prefix = "";
             // Read response from ServerSocket.
-            while(din.hasNextLine()){
-                response = din.nextLine();
-                if(!response.equals(Symbols.assuranceMessage)){
+            do{
+                response = din.readLine();
+                if(response != null){
                     sb.append(prefix).append(response);
                     if(prefix.equals("")){
                         prefix = "\n";
                     }
                 }
-            }
+            } while(response != null);
             //pout.close();
             //din.close();
             //server.close();
             System.out.println("Closing socket.");
             return sb.toString();
-        } catch(java.net.SocketTimeoutException e){
-            if(serverIndex < numServers){
+        } catch (IOException ex) {
+            System.out.println("Server Crash");
+            if(serverIndex < numServers - 1){
+                System.out.println("We saw the server crash");
                 serverIndex++;
+                try {
+                    getSocket();
+                } catch (IOException ex1) {
+                    Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex1);
+                }
                 processCommand(command, input);
             } else{
                 System.out.println("Out of functioning servers.");
             }
-        } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } 
         return "ERROR: Nothing happened.";
     }

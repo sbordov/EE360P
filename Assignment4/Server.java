@@ -71,7 +71,8 @@ public class Server {
                 // TODO: handle request from client
                 Socket s;
                 while ( (s = listener.accept()) != null) {
-                    s.setSoTimeout(Symbols.TIMEOUT_DURATION);
+                    //s.setSoTimeout(Symbols.TIMEOUT_DURATION);
+                    //System.out.println("Got a request");
                     processRequest(s);
                 }
             } catch (IOException ex) {

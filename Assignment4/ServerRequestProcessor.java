@@ -26,15 +26,33 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
     
     public void processInput(){
         String[] input = this.getInputTokens();
-        if(input[1].equals("REQUEST")){
+        if(input[1].equals(Symbols.requestMessageTag)){
             onReceiveRequest(input);
-        } else if(input[1].equals("RELEASE")){
+        } else if(input[1].equals(Symbols.releaseMessageTag)){
             onReceiveRelease(input);
-        } else if(input[1].equals("ACK")){
+        } else if(input[1].equals(Symbols.ackMessageTag)){
             onReceiveAck(input);
+        } else if(input[1].equals(Symbols.imAliveMessageTag)){
+            onReceiveImAlive(input);
+        } else if(input[1].equals(Symbols.rUAliveMessageTag)){
+            onReceiveRUAlive(input);
         } else{
             throw new UnsupportedOperationException("Received neither ACK nor REQUEST");
         }
+    }
+    
+    // TODO
+    public void onReceiveImAlive(String[] input){
+        int serverId = Integer.parseInt(input[2]);
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+    }
+    
+    public void onReceiveRUAlive(String[] input){
+        int serverId = Integer.parseInt(input[2]);
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+        sendImAlive(serverId);
     }
     
     public void onReceiveRequest(String[] input){
@@ -71,6 +89,48 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
             release(id);
         }
         processNextTransactionIfSameServerId();
+    }
+    
+    public void sendRUAlive(){
+        StringBuilder rUAliveMessage = new StringBuilder();
+        // "SERVER_CONNECTION;"
+        rUAliveMessage.append(Symbols.serverMessageHeader);
+        rUAliveMessage.append(Symbols.messageDelimiter);
+        // "RUALIVE;"
+        rUAliveMessage.append(Symbols.rUAliveMessageTag);
+        rUAliveMessage.append(Symbols.messageDelimiter);
+        // "<Server_Id>"
+        rUAliveMessage.append(Integer.toString(myServer.myId));
+        rUAliveMessage.append(Symbols.messageDelimiter);
+        // "<Time_Stamp>;"
+        rUAliveMessage.append(Integer.toString(myServer.clock.sendAction()));
+        rUAliveMessage.append(Symbols.messageDelimiter);
+        sendToAll(rUAliveMessage.toString());
+    }
+    
+    public void sendImAlive(int serverId){
+        StringBuilder imAliveMessage = new StringBuilder();
+        // "SERVER_CONNECTION;"
+        imAliveMessage.append(Symbols.serverMessageHeader);
+        imAliveMessage.append(Symbols.messageDelimiter);
+        // "IMALIVE;"
+        imAliveMessage.append(Symbols.imAliveMessageTag);
+        imAliveMessage.append(Symbols.messageDelimiter);
+        // "<Server_Id>"
+        imAliveMessage.append(Integer.toString(myServer.myId));
+        imAliveMessage.append(Symbols.messageDelimiter);
+        // "<Time_Stamp>;"
+        imAliveMessage.append(Integer.toString(myServer.clock.sendAction()));
+        imAliveMessage.append(Symbols.messageDelimiter);
+        try {
+            Socket s = this.otherServer;
+            //PrintWriter psOut = this.getPout();
+            psOut.print(imAliveMessage.toString());
+            psOut.flush();
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     // ACK Message has the following format:

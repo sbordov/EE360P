@@ -31,6 +31,7 @@ public abstract class RequestProcessor implements Runnable{
         this.setOtherServer(s);
         try {
             this.setPout(new PrintWriter(s.getOutputStream()));
+            this.setPsOut(new PrintStream(s.getOutputStream()));
         } catch (IOException ex) {
             Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
         }

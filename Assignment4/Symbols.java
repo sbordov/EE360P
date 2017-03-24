@@ -11,6 +11,8 @@ public class Symbols {
     public static final String requestMessageTag = "REQUEST";
     public static final String ackMessageTag = "ACK";
     public static final String releaseMessageTag = "RELEASE";
+    public static final String imAliveMessageTag = "IMALIVE";
+    public static final String rUAliveMessageTag = "RUALIVE";
     public static final String assuranceMessage = "Still processing...";
     public static final int TIMEOUT_DURATION = 100; // 100ms
     public static final int INITIAL_QUEUE_CAPACITY = 50;
