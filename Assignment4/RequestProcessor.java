@@ -19,74 +19,13 @@ import java.util.logging.Logger;
  */
 public abstract class RequestProcessor implements Runnable{
     protected Socket otherServer;
-
-    public Socket getOtherServer() {
-        return otherServer;
-    }
-
-    public void setOtherServer(Socket otherServer) {
-        this.otherServer = otherServer;
-    }
-
-    public PrintWriter getPout() {
-        return pout;
-    }
-
-    public void setPout(PrintWriter pout) {
-        this.pout = pout;
-    }
-
-    public PrintStream getPsOut() {
-        return psOut;
-    }
-
-    public void setPsOut(PrintStream psOut) {
-        this.psOut = psOut;
-    }
-
-    public Scanner getDin() {
-        return din;
-    }
-
-    public void setDin(Scanner din) {
-        this.din = din;
-    }
-
-    public String[] getInputTokens() {
-        return inputTokens;
-    }
-
-    public void setInputTokens(String[] inputTokens) {
-        this.inputTokens = inputTokens;
-    }
-
-    public String[] getRequestTokens() {
-        return requestTokens;
-    }
-
-    public void setRequestTokens(String[] requestTokens) {
-        this.requestTokens = requestTokens;
-    }
-
-    public Server getMyServer() {
-        return myServer;
-    }
-
-    public void setMyServer(Server myServer) {
-        this.myServer = myServer;
-    }
     protected PrintWriter pout;
     protected PrintStream psOut;
     protected Scanner din;
     protected String[] inputTokens;
     protected String[] requestTokens;
     protected Server myServer;
-    
-    protected enum MessageType{
-        REQUEST,
-        ACK
-    };
-    
+
     public RequestProcessor(Socket s, String[] input,
             Server server) {
         this.setOtherServer(s);
@@ -110,7 +49,6 @@ public abstract class RequestProcessor implements Runnable{
     public void run(){
         Socket s = this.getOtherServer();
         if(s == null){
-            System.out.println("Null here.");
         }
         processInput();
     }
@@ -172,13 +110,6 @@ public abstract class RequestProcessor implements Runnable{
         releaseMessage.append(Symbols.messageDelimiter);
         // "<RELEASEd_Process_Id>"
         releaseMessage.append(Integer.toString(id));
-        Socket s = this.getOtherServer();
-        try {
-            s.close();
-        } catch (IOException ex) {
-            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
         sendToAll(releaseMessage.toString());
         
     }
@@ -199,11 +130,81 @@ public abstract class RequestProcessor implements Runnable{
                     myServer.isProcessAtFrontOfQueue(nextProcess.processId);
             if(enoughAcks && isSmallestProcessInQueue){
                 // Don't need to send message to client.
+                /*
                 myServer.performTransaction();
                 sendRelease(processId);
+                */
+                release(processId);
             }
         } while(enoughAcks && isSmallestProcessInQueue);
     }
+    
+    public void release(int processId){
+        String response = myServer.performTransaction();
+        sendRelease(processId);
+        myServer.respondToClient(processId, response);
+    }
+    
+    public Socket getOtherServer() {
+        return otherServer;
+    }
+
+    public void setOtherServer(Socket otherServer) {
+        this.otherServer = otherServer;
+    }
+
+    public PrintWriter getPout() {
+        return pout;
+    }
+
+    public void setPout(PrintWriter pout) {
+        this.pout = pout;
+    }
+
+    public PrintStream getPsOut() {
+        return psOut;
+    }
+
+    public void setPsOut(PrintStream psOut) {
+        this.psOut = psOut;
+    }
+
+    public Scanner getDin() {
+        return din;
+    }
+
+    public void setDin(Scanner din) {
+        this.din = din;
+    }
+
+    public String[] getInputTokens() {
+        return inputTokens;
+    }
+
+    public void setInputTokens(String[] inputTokens) {
+        this.inputTokens = inputTokens;
+    }
+
+    public String[] getRequestTokens() {
+        return requestTokens;
+    }
+
+    public void setRequestTokens(String[] requestTokens) {
+        this.requestTokens = requestTokens;
+    }
+
+    public Server getMyServer() {
+        return myServer;
+    }
+
+    public void setMyServer(Server myServer) {
+        this.myServer = myServer;
+    }
+    
+    protected enum MessageType{
+        REQUEST,
+        ACK
+    };
     
     /*
     protected void destroyThreadLocals(){

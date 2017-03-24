@@ -41,10 +41,11 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
             if(serverId != myServer.myId){
                 try {
                     Socket s = getSocket(myServer.serverList.get(serverId));
-                    s.setSoTimeout(Symbols.TIMEOUT_DURATION);
+                    //s.setSoTimeout(Symbols.TIMEOUT_DURATION);
                     PrintStream printStreamOut = this.getPsOut();
                     printStreamOut.println(message);
                     printStreamOut.flush();
+                    /*
                     String response;
                     Scanner dataIn = this.getDin();
                     // Read response from ServerSocket.
@@ -52,6 +53,7 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
                         response = dataIn.nextLine();
                         onReceiveAck(response.split(";"));
                     }
+                    */
                     s.close();
                 } catch (IOException ex) {
                     if(ex instanceof java.net.SocketTimeoutException){
@@ -65,20 +67,6 @@ public class ClientRequestProcessor extends RequestProcessor implements Runnable
         for(int id: myServer.brokenServerIds.keySet()){
             myServer.removeServerFromList(id);
         }
-    }
-    
-    public void onReceiveAck(String[] input){
-        int serverId = Integer.parseInt(input[2]);
-        int time = Integer.parseInt(input[3]);
-        myServer.clock.receiveAction(time);
-        int id = Integer.parseInt(input[4]);
-        boolean enoughAcks = myServer.incrementNumAcks(id);
-        boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
-        if(enoughAcks && isSmallestProcessInQueue){
-            myServer.performTransaction();
-            sendRelease(id);
-        }
-        processNextTransactionIfSameServerId();
     }
 
     public void sendRequest(int id){

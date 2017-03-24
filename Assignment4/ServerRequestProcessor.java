@@ -30,6 +30,8 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
             onReceiveRequest(input);
         } else if(input[1].equals("RELEASE")){
             onReceiveRelease(input);
+        } else if(input[1].equals("ACK")){
+            onReceiveAck(input);
         } else{
             throw new UnsupportedOperationException("Received neither ACK nor REQUEST");
         }
@@ -44,21 +46,36 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         String[] reqTokens = input[5].split("\\s");
         ServerUpdateRequest request = new ServerUpdateRequest(serverId, time, id, reqTokens);
         myServer.insertToPendingQueue(request);
-        sendAck(id);
+        sendAck(id, serverId);
     }
     
     public void onReceiveRelease(String[] input){
+        int id = Integer.parseInt(input[4]);
         int time = Integer.parseInt(input[3]);
         myServer.clock.receiveAction(time);
         // Don't need to send message to client.
-        System.out.println("Performing transaction.");
         myServer.performTransaction();
+        myServer.pendingQ.poll();
+        processNextTransactionIfSameServerId();
+    }
+    
+     
+    public void onReceiveAck(String[] input){
+        int serverId = Integer.parseInt(input[2]);
+        int time = Integer.parseInt(input[3]);
+        myServer.clock.receiveAction(time);
+        int id = Integer.parseInt(input[4]);
+        boolean enoughAcks = myServer.incrementNumAcks(id);
+        boolean isSmallestProcessInQueue = myServer.isProcessAtFrontOfQueue(id);
+        if(enoughAcks && isSmallestProcessInQueue){
+            release(id);
+        }
         processNextTransactionIfSameServerId();
     }
     
     // ACK Message has the following format:
     //  "SERVER_CONNECTION;ACK;<Server_Id>;<Time_Stamp>;<ACKed_Process_Id>"
-    public void sendAck(int id){
+    public void sendAck(int id, int serverId){
         StringBuilder ackMessage = new StringBuilder();
         // "SERVER_CONNECTION;"
         ackMessage.append(Symbols.serverMessageHeader);
@@ -74,6 +91,15 @@ public class ServerRequestProcessor extends RequestProcessor implements Runnable
         ackMessage.append(Symbols.messageDelimiter);
         // "<ACKed_Process_Id>"
         ackMessage.append(Integer.toString(id));
+        try {
+            Socket s = getSocket(myServer.getServerList().get(serverId));
+            PrintWriter pOut = new PrintWriter(s.getOutputStream());
+            pOut.print(ackMessage.toString());
+            pOut.flush();
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
+        }
         send(ackMessage.toString());
     }
     

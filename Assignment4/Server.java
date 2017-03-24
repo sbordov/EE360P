@@ -66,7 +66,6 @@ public class Server {
         while (true) {
             try {
                 // Start server socket to communicate with clients and other servers
-                System.out.println("Server " + this.myId + " started.");
                 ServerSocket listener = new ServerSocket(this.getServerList().get(myId).getPortNumber());
 
                 // TODO: handle request from client
@@ -161,10 +160,11 @@ public class Server {
         ServerUpdateRequest process = myProcesses.get(processId);
         if(process == null){
             throw new NullPointerException("Process not found.");
-        }
-        int numAcks = process.incrementAndGetNumAcks();
-        if(numAcks == numFunctioningServers - 1){
-            return true;
+        } else{
+            int numAcks = process.incrementAndGetNumAcks();
+            if(numAcks == numFunctioningServers - 1){
+                return true;
+            }
         }
         return false;
     }
@@ -197,10 +197,8 @@ public class Server {
     
     // TODO: Make changes to inventory based on first ServerUpdateRequest in
     //      pendingQ, and remove ServerUpdateRequest from queue.
-    public synchronized void performTransaction(){
+    public synchronized String performTransaction(){
         ServerUpdateRequest request = pendingQ.peek();
-        boolean requestIsFromMyClient = request.serverId == this.myId;
-        int processId = request.processId;
         String[] tokens = request.processTokens;
         String response;
         // Send appropriate command to the server and display the
@@ -216,7 +214,12 @@ public class Server {
         } else {
             response = "ERROR: No such command";
         }
-        pendingQ.poll(); // Remove latest entry in pendingQ post-inventory update.
+        return response;
+    }
+    
+    public synchronized void respondToClient(int processId, String response){
+        ServerUpdateRequest request = pendingQ.poll();
+        boolean requestIsFromMyClient = request.serverId == this.myId;
         if(requestIsFromMyClient){
             Socket client = this.clients.get(processId);
             try {
