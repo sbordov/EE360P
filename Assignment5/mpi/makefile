@@ -2,18 +2,18 @@ all: multiply
 
 
 test1: multiply
-	mpiexec ./multiply -n 1
+	mpiexec -n 1 ./multiply
 
 test3: multiply
-	mpiexec ./multiply -n 3
+	mpiexec -n 3 ./multiply
 
 test15: multiply
-	mpiexec ./multiply -n 15
+	mpiexec -n 15 ./multiply
 
 clean:
 	rm result.txt multiply
 
 multiply:
-	mpicc matrixMPI.c -o multiply
+	mpicc matrixMPI.c -o multiply -lpthread
 
 
