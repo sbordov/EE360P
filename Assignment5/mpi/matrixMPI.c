@@ -9,7 +9,90 @@ enum {
     INDEX,
     ROW
 };
-//
+
+void *schedule(void *vectorSize);
+
+
+int main(int argc, char **argv) {
+    int ignore;
+    int world_size;
+    int world_rank;
+    int vectorLen;
+    int rowNum;
+    int vector[1025];
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &ignore); // init for MPI with threads
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+     // root process reads vector and row number
+    if (world_rank == 0) {
+        FILE *fp = fopen("vector.txt", "r");
+        while (fscanf(fp, "%d", &vector[vectorLen]) != -1) {
+            vectorLen++;
+        }
+        fclose(fp);
+        fp = fopen("matrix.txt", "r");
+        fscanf(fp, "%d", &rowNum);
+        fclose(fp);
+    }
+    // root process tells sends vectorLen, vector, and rowNum to all other processes
+    MPI_Bcast(&vectorLen, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&vector, vectorLen, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&rowNum, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // we have a scheduler thread so the root process can do work too
+    pthread_t scheduler;
+
+    if (world_rank == 0) {
+        pthread_create(&scheduler, NULL, schedule, &vectorLen);
+    }
+    // hacking to get the world_size to the scheduler without an extra message
+    // initial request is negative because all other requests will be indexes for the data
+    // that will follow
+    int index = -world_size;
+/*DEBUG*/ printf("%d sending init\n", world_rank);
+    MPI_Send(&index, 1, MPI_INT, 0, REQUEST, MPI_COMM_WORLD);
+/*DEBUG*/ printf("%d waiting on initial index\n", world_rank);
+    MPI_Recv(&index, 1, MPI_INT, 0, INDEX, MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+/*DEBUG*/ printf("%d recieved initial index %d\n", world_rank, index);
+    if (index == -1) {
+        if (world_rank == 0) {
+            void *exit;
+            pthread_join(scheduler, exit);
+        }
+        /*DEBUG*/ printf("%d terminiating soon\n", world_rank);
+        MPI_Finalize();
+        return 0;
+    }
+    while (index != -1) {
+        int buf[vectorLen];
+        int res = 0;
+        /*DEBUG*/ printf("%d waiting on row %d\n", world_rank, index);
+        MPI_Recv(&buf, vectorLen, MPI_INT, 0, ROW, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+        /*DEBUG*/ printf("%d recieved row %d\n", world_rank, index);
+        for (int p = 0; p < vectorLen; p++) {
+            res += vector[p] * buf[p];
+        }
+        /*DEBUG*/ printf("%d sending index %d\n", world_rank, index);
+        MPI_Send(&index, 1, MPI_INT, 0, REQUEST, MPI_COMM_WORLD);
+        /*DEBUG*/ printf("%d sending product %d for index %d\n", world_rank, res, index);
+        MPI_Send(&res, 1, MPI_INT, 0, PRODUCT, MPI_COMM_WORLD);
+        /*DEBUG*/ printf("%d waiting on index\n", world_rank);
+        MPI_Recv(&index, 1, MPI_INT, 0, INDEX, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+        /*DEBUG*/ printf("%d recieved index %d\n", world_rank, index);
+    }
+/*DEBUG*/ printf("%d terminiating soon\n", world_rank);
+    // Finalize the MPI environment. No more MPI calls can be made after this
+    if (world_rank == 0) {
+        /*DEBUG*/ printf("trying to join\n");
+        void *exit;
+        pthread_join(scheduler, exit);
+        printf("joined successfully\n");
+    }
+    MPI_Finalize();
+}
 
 void *schedule(void *vectorSize) {
     FILE *fp;
@@ -21,6 +104,7 @@ void *schedule(void *vectorSize) {
     int product;
     int stored = 0;
     int index;
+    int halt = -1;
     MPI_Status status;
     /*DEBUG*/ printf("scheduler opening matrix\n");
     fp = fopen("matrix.txt", "r");
@@ -55,7 +139,7 @@ void *schedule(void *vectorSize) {
     }
 
     while (stored < rowNum) {
-                /*DEBUG*/ printf("scheduler waiting on request\n");
+        /*DEBUG*/ printf("scheduler waiting on request\n");
         MPI_Recv(&index, 1, MPI_INT, MPI_ANY_SOURCE, REQUEST, MPI_COMM_WORLD,
                  &status);
         /*DEBUG*/ printf("scheduler receive request %d from %d\n", index, status.MPI_SOURCE);
@@ -66,12 +150,11 @@ void *schedule(void *vectorSize) {
             /*DEBUG*/ printf("scheduler receive product %d from %d on index %d\n", product, status.MPI_SOURCE, index);
             result[index] = product;
             stored++;
-          }
+        }
     }
 
     /*DEBUG*/ printf("scheduler closing matrix\n");
     fclose(fp);
-    int halt = -1;
     printf("world size is %d\n", world_size);
     for (int i = 1; i < world_size; i++) {
         /*DEBUG*/ printf("scheduler sending halt to %d\n", i);
@@ -93,92 +176,4 @@ void *schedule(void *vectorSize) {
     /*DEBUG*/ printf("scheduler exiting\n");
     fclose(fp);
     pthread_exit(0);
-}
-
-int main(int argc, char **argv) {
-
-    // Initialize the MPI environment. The two arguments to MPI Init are not
-    // currently used by MPI implementations, but are there in case future
-    // implementations might need the arguments.
-    int provided;
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-    // Get the number of processes
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    // Get the rank of the process
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    // Get the name of the processor
-    char processor_name[MPI_MAX_PROCESSOR_NAME];
-    int name_len;
-    MPI_Get_processor_name(processor_name, &name_len);
-    // Print off a hello world message
-    printf("Hello world from processor %s, rank %d out of %d processors\n",
-           processor_name, world_rank, world_size);
-
-
-    int vectorSize;
-    int vector[1025];
-    int rows;
-    if (world_rank == 0) {
-        FILE *fp = fopen("vector.txt", "r");
-        while (fscanf(fp, "%d", &vector[vectorSize]) != -1) {
-            vectorSize++;
-        }
-        fclose(fp);
-        fp = fopen("matrix.txt", "r");
-        fscanf(fp, "%d", &rows);
-        fclose(fp);
-    }
-    MPI_Bcast(&vectorSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&vector, vectorSize, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    pthread_t scheduler;
-    if (world_rank == 0) {
-        pthread_create(&scheduler, NULL, schedule, &vectorSize);
-    }
-    int index = -world_size;
-/*DEBUG*/ printf("%d sending init\n", world_rank);
-    MPI_Send(&index, 1, MPI_INT, 0, REQUEST, MPI_COMM_WORLD);
-/*DEBUG*/ printf("%d waiting on initial index\n", world_rank);
-    MPI_Recv(&index, 1, MPI_INT, 0, INDEX, MPI_COMM_WORLD,
-             MPI_STATUS_IGNORE);
-/*DEBUG*/ printf("%d recieved initial index %d\n", world_rank, index);
-    if (index == -1) {
-        if (world_rank == 0) {
-            void *exit;
-            pthread_join(scheduler, exit);
-        }
-        /*DEBUG*/ printf("%d terminiating soon\n", world_rank);
-        MPI_Finalize();
-        return 0;
-    }
-    while (index != -1) {
-        int buf[vectorSize];
-        int res = 0;
-        /*DEBUG*/ printf("%d waiting on row %d\n", world_rank, index);
-        MPI_Recv(&buf, vectorSize, MPI_INT, 0, ROW, MPI_COMM_WORLD,
-                 MPI_STATUS_IGNORE);
-        /*DEBUG*/ printf("%d recieved row %d\n", world_rank, index);
-        for (int p = 0; p < vectorSize; p++) {
-            res += vector[p] * buf[p];
-        }
-        /*DEBUG*/ printf("%d sending index %d\n", world_rank, index);
-        MPI_Send(&index, 1, MPI_INT, 0, REQUEST, MPI_COMM_WORLD);
-        /*DEBUG*/ printf("%d sending product %d for index %d\n", world_rank, res, index);
-        MPI_Send(&res, 1, MPI_INT, 0, PRODUCT, MPI_COMM_WORLD);
-        /*DEBUG*/ printf("%d waiting on index\n", world_rank);
-        MPI_Recv(&index, 1, MPI_INT, 0, INDEX, MPI_COMM_WORLD,
-                 MPI_STATUS_IGNORE);
-        /*DEBUG*/ printf("%d recieved index %d\n", world_rank, index);
-    }
-/*DEBUG*/ printf("%d terminiating soon\n", world_rank);
-    // Finalize the MPI environment. No more MPI calls can be made after this
-    if (world_rank == 0) {
-        /*DEBUG*/ printf("trying to join\n");
-        void *exit;
-        pthread_join(scheduler, exit);
-        printf("joined successfully\n");
-    }
-    MPI_Finalize();
 }
