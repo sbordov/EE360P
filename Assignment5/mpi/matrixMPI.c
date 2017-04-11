@@ -75,11 +75,12 @@ int main(int argc, char **argv) {
     while (index != -1) {
         int buf[vectorLen];
         int res = 0;
+        int p;
         /*DEBUG*/ printf("%d waiting on row %d\n", world_rank, index);
         MPI_Recv(&buf, vectorLen, MPI_INT, 0, ROW, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
         /*DEBUG*/ printf("%d recieved row %d\n", world_rank, index);
-        for (int p = 0; p < vectorLen; p++) {
+        for (p = 0; p < vectorLen; p++) {
             res += vector[p] * buf[p];
         }
         /*DEBUG*/ printf("%d sending index %d\n", world_rank, index);
@@ -113,12 +114,15 @@ void *schedule(void *vectorSize) {
     int stored = 0;
     int index;
     int halt = -1;
+    int i;
+    int j;
     MPI_Status status;
     /*DEBUG*/ printf("scheduler opening matrix\n");
     fp = fopen("matrix.txt", "r");
     fscanf(fp, "%d", &rowNum);
-    for (int j = 0; j < rowNum; j++) {
-        for (int i = 0; i < vs; i++) {
+    for (j = 0; j < rowNum; j++) {
+        int i;
+        for (i = 0; i < vs; i++) {
             fscanf(fp, "%d", &buf[i]);
         }
 
@@ -164,7 +168,7 @@ void *schedule(void *vectorSize) {
     /*DEBUG*/ printf("scheduler closing matrix\n");
     fclose(fp);
     printf("world size is %d\n", world_size);
-    for (int i = 1; i < world_size; i++) {
+    for (i = 1; i < world_size; i++) {
         /*DEBUG*/ printf("scheduler sending halt to %d\n", i);
         MPI_Send(&halt, 1, MPI_INT, i, INDEX, MPI_COMM_WORLD);
     }
