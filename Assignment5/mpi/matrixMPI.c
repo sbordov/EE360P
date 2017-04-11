@@ -38,6 +38,14 @@ int main(int argc, char **argv) {
     MPI_Bcast(&vectorLen, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&vector, vectorLen, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&rowNum, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if(rowNum <= 0){
+        if(world_rank == 0){
+            FILE* fpempty = fopen("result.txt", "w");
+            /*DEBUG*/ printf("empty vector\n");
+            fclose(fpempty);
+        }
+        return 0;
+    }
 
     // we have a scheduler thread so the root process can do work too
     pthread_t scheduler;
