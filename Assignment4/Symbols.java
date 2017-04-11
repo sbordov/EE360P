@@ -11,7 +11,9 @@ public class Symbols {
     public static final String requestMessageTag = "REQUEST";
     public static final String ackMessageTag = "ACK";
     public static final String releaseMessageTag = "RELEASE";
-    public static final String assuranceMessage = "Still processing...";
+    public static final String imAliveMessageTag = "IMALIVE";
+    public static final String rUAliveMessageTag = "RUALIVE";
+    public static final String assuranceMessage = "Still processing...\n";
     public static final int TIMEOUT_DURATION = 100; // 100ms
     public static final int INITIAL_QUEUE_CAPACITY = 50;
     //public static final int TCPPort = 7033; // Port number for debugging purposes.

@@ -18,9 +18,9 @@ public class Server {
     protected HashMap<Integer, ServerUpdateRequest> myProcesses;
     // A list of clients with key = processId. Specific to each server.
     protected HashMap<Integer, Socket> clients;
-    protected HashMap<Integer, ClientAssuranceThread> clientAssuranceThreads;
     protected HashMap<Integer, ServerInfo> serverList;
     protected HashMap<Integer, Integer> brokenServerIds;
+    protected HashMap<Integer, HashMap<Integer, Thread>> processTimebombs;
     protected Inventory inventory;
     protected int nextNewProcessId = 0;
     
@@ -31,8 +31,8 @@ public class Server {
         this.pendingQ = new PriorityQueue<>(Symbols.INITIAL_QUEUE_CAPACITY, new ServerUpdateRequestComparator());
         this.myProcesses = new HashMap<>();
         this.clients = new HashMap<>();
-        this.clientAssuranceThreads = new HashMap<>();
         this.serverList = new HashMap<>();
+        this.processTimebombs = new HashMap<>();
         this.brokenServerIds = new HashMap<>();
         this.inventory = new Inventory();
         
@@ -71,7 +71,8 @@ public class Server {
                 // TODO: handle request from client
                 Socket s;
                 while ( (s = listener.accept()) != null) {
-                    s.setSoTimeout(Symbols.TIMEOUT_DURATION);
+                    //s.setSoTimeout(Symbols.TIMEOUT_DURATION);
+                    //System.out.println("Got a request");
                     processRequest(s);
                 }
             } catch (IOException ex) {
@@ -84,12 +85,14 @@ public class Server {
         try {
             Scanner sc = new Scanner(s.getInputStream());
             String command = sc.nextLine();
+            /*
             while(command.equals(Symbols.assuranceMessage) && sc.hasNextLine()){
                 command = sc.nextLine();
             }
             if(command.equals(Symbols.assuranceMessage)){
                 return;
             }
+*/
             String[] tokens = command.split(";");
             Runnable requestProcessor = null;
             
@@ -115,9 +118,6 @@ public class Server {
     
     public synchronized void insertToClients(int processId, Socket s){
         this.clients.put(processId, s);
-        ClientAssuranceThread cat = new ClientAssuranceThread((s));
-        cat.start();
-        this.clientAssuranceThreads.put(processId, cat);
 
     }
     
@@ -152,6 +152,22 @@ public class Server {
         if(!brokenServerIds.containsKey(id)){
             brokenServerIds.put(id, id);
             numFunctioningServers--;
+        }
+    }
+    
+    public synchronized void removeBrokenServerProcesses(int serverId){
+        for(ServerUpdateRequest request : pendingQ){
+            if(request.serverId == serverId){
+                pendingQ.remove(request);
+            }
+        }
+    }
+    
+    public synchronized void notifyNextThreadInQueue(int processId){
+        ServerUpdateRequest request = pendingQ.peek();
+        if((request.processId == processId) && (request.serverId == this.myId)){
+            this.performTransaction();
+            this.pendingQ.poll();
         }
     }
     
@@ -229,8 +245,6 @@ public class Server {
                 client.close();
                 pOut.close();
                 clients.remove(processId);
-                clientAssuranceThreads.get(processId).interrupt();
-                clientAssuranceThreads.remove(processId);
                 myProcesses.remove(processId);
             } catch (IOException ex) {
                 Logger.getLogger(ServerRequestProcessor.class.getName()).log(Level.SEVERE, null, ex);
